@@ -19,22 +19,42 @@ random.seed()
 import pygame
 from pygame.locals import *
 
-class Baddie(object):
+class GameObject(object):
+    def collision_check(self, new_x, new_y, old_world, new_world):
+        obj = new_world.get_object(new_x, new_y)
+        if obj is not None:
+            return True
+
+        obj = old_world.get_object(new_x, new_y)
+        if obj is not None and obj is not self and new_world.get_location(obj) == (-1, -1):
+            return True
+
+        return False
+
+class Baddie(GameObject):
     def advance(self, old_world, new_world):
         pass
 
-class FallingBaddie(Baddie):
+class MarchingBaddie(Baddie):
     def advance(self, old_world, new_world):
         Baddie.advance(self, old_world, new_world)
         
         old_x, old_y = old_world.get_location(self)
 
-        new_x, new_y = old_x, old_y + 1
-        
-        if 0 <= new_x < old_world.width and 0 <= new_y < old_world.height:
-            new_world.add_object(old_x, old_y + 1, self)
+        direction = old_world.get_state(self, random.randint(0, 1) or -1)
 
-class Turret(object):
+        new_x, new_y = old_x + direction, old_y
+        if self.collision_check(new_x, new_y, old_world, new_world):
+            direction = -direction
+            new_x, new_y = old_x, old_y + 1
+            if self.collision_check(new_x, new_y, old_world, new_world):
+                new_x, new_y = old_x + direction, old_y
+                if self.collision_check(new_x, new_y, old_world, new_world):
+                    new_x, new_y = old_x, old_y
+        
+        new_world.add_object(new_x, new_y, self, direction)
+
+class Turret(GameObject):
     def advance(self, old_world, new_world):
         old_x, old_y = old_world.get_location(self)
 
@@ -43,6 +63,11 @@ class Turret(object):
 class DirectionalTurret(Turret):
     def advance(self, old_world, new_world):
         Turret.advance(self, old_world, new_world)
+
+class OutOfBounds(object):
+    pass
+
+out_of_bounds = OutOfBounds()
 
 class World(object):
     def __init__(self, width, height):
@@ -53,21 +78,32 @@ class World(object):
 
         self.object_to_pos = {}
 
-    def add_object(self, x, y, obj):
+        self.object_state = {}
+
+    def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
 
         self.object_to_pos[obj] = (x, y)
 
+        if state is not None:
+            self.object_state[obj] = state
+
     def get_object(self, x, y):
-        return self.objects[x + y * self.width]
+        if 0 <= x < self.width and 0 <= y < self.height:
+            return self.objects[x + y * self.width]
+
+        return out_of_bounds
 
     def get_location(self, obj):
         return self.object_to_pos.get(obj, (-1, -1))
 
+    def get_state(self, obj, default = None):
+        return self.object_state.get(obj, default)
+
     def advance(self):
         result = World(self.width, self.height)
 
-        result.add_object(random.randint(0, self.width-1), 0, FallingBaddie())
+        result.add_object(random.randint(0, self.width-1), 0, MarchingBaddie())
 
         for x in range(self.width):
             for y in range(self.height-1, -1, -1):
