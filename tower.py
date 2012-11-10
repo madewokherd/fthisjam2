@@ -116,15 +116,24 @@ class World(object):
     def clicked(self, x, y):
         self.add_object(x, y, DirectionalTurret())
 
-def draw_world(world, surface, x, y, w, h):
+def draw_world(old_world, world, t, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
-
+    
     for obj_x in range(world.width):
         for obj_y in range(world.height):
             obj = world.get_object(obj_x, obj_y)
             if obj is not None:
-                draw_x = obj_x * w / world.width
-                draw_y = obj_y * h / world.height
+                prev_x, prev_y = old_world.get_location(obj)
+                
+                if prev_x in (obj_x, -1):
+                    draw_x = obj_x * w / world.width
+                else:
+                    draw_x = int(((1.0-t) * prev_x + t * obj_x) * w / world.width)
+                if prev_y in (obj_y, -1):
+                    draw_y = obj_y * h / world.height
+                else:
+                    draw_y = int(((1.0-t) * prev_y + t * obj_y) * h / world.height)
+                
                 draw_width = w / world.width
                 draw_height = h / world.height
                 if isinstance(obj, Baddie):
@@ -139,11 +148,10 @@ def run(world, x, y, w, h):
     clock = pygame.time.Clock()
     paused = False
     frame = 0
+    old_world, world = world, world.advance()
+    pygame.time.set_timer(pygame.USEREVENT, 15)
 
     while True:
-        if not paused:
-            clock.tick(60)
-        
         events = pygame.event.get()
         
         if paused and not events:
@@ -164,13 +172,12 @@ def run(world, x, y, w, h):
                 press_y = event.pos[1] * world.height / h + y
                 if event.button == 1:
                     world.clicked(press_x, press_y)
-        
-        if not paused:
-            frame += 1
-            if frame % 20 == 0:
-                world = world.advance()
+            elif event.type == pygame.USEREVENT:
+                frame += 1
+                if frame % 20 == 0:
+                    old_world, world = world, world.advance()
 
-        draw_world(world, screen, x, y, w, h)
+        draw_world(old_world, world, (frame % 20) / 20.0, screen, x, y, w, h)
 
         if paused:
             if pygame.font:
