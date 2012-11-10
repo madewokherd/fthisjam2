@@ -60,6 +60,9 @@ class World(object):
 
         return result
 
+    def clicked(self, x, y):
+        self.add_object(x, y, FallingBaddie())
+
 def draw_world(world, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
 
@@ -98,6 +101,11 @@ def run(world, x, y, w, h):
                     paused = not paused
             elif paused:
                 continue
+            elif event.type == MOUSEBUTTONDOWN:
+                press_x = event.pos[0] * world.width / w + x
+                press_y = event.pos[1] * world.height / h + y
+                if event.button == 1:
+                    world.clicked(press_x, press_y)
         
         if not paused:
             frame += 1
@@ -124,8 +132,6 @@ def main():
     pygame.init()
 
     world = World(game_width, game_height)
-
-    world.add_object(3, 0, FallingBaddie())
 
     pygame.display.set_mode((width, height))
     
