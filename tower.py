@@ -125,6 +125,8 @@ class World(object):
 
         self.mouse_pos = (0, 0)
 
+        self.place_turret_cooldown = 0
+
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
 
@@ -174,10 +176,14 @@ class World(object):
 
         result.mouse_pos = self.mouse_pos
 
+        result.place_turret_cooldown = self.place_turret_cooldown - 1 if self.place_turret_cooldown > 0 else 0
+
         return result
 
     def clicked(self, x, y):
-        self.add_object(x, y, DirectionalTurret())
+        if not self.place_turret_cooldown:
+            self.add_object(x, y, DirectionalTurret())
+            self.place_turret_cooldown = 4
 
     def hover(self, x, y):
         self.mouse_pos = (x, y)
@@ -256,7 +262,7 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                     else:
                         surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
-    if True: #replace with "can place turret" condition
+    if not world.place_turret_cooldown:
         # draw turret to be placed
 
         mouse_x, mouse_y = world.mouse_pos
@@ -270,7 +276,7 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
         obj_height = h / world.height * 2 / 3
         draw_x += (draw_width - obj_width) / 2
         draw_y += (draw_height - obj_height) / 2
-        surface.fill(Color(128,128,255,168), Rect(draw_x, draw_y, obj_width, obj_height))
+        pygame.draw.rect(surface, Color(128,128,255,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
 
 def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
