@@ -23,36 +23,54 @@ class GameObject(object):
     def collision_check(self, new_x, new_y, old_world, new_world):
         obj = new_world.get_object(new_x, new_y)
         if obj is not None:
-            return True
+            return obj
 
         obj = old_world.get_object(new_x, new_y)
-        if obj is not None and obj is not self and new_world.get_location(obj) == (-1, -1):
-            return True
-
-        return False
+        if obj is not None and obj is not self:
+            oth_x, oth_y = new_world.get_location(obj)
+            if oth_x == -1:
+                return obj # advance the other obj, maybe?
 
 class Baddie(GameObject):
+    def collision_check(self, new_x, new_y, old_world, new_world):
+        result = GameObject.collision_check(self, new_x, new_y, old_world, new_world)
+        if result is not None:
+            return result
+
+        obj = old_world.get_object(new_x, new_y)
+        if obj is not None and obj is not self and isinstance(obj, Baddie):
+            old_x, old_y = old_world.get_location(self)
+            oth_x, oth_y = new_world.get_location(obj)
+            for oth_pref_x, oth_pref_y, oth_pref_state in obj.get_preferred_locations(old_world):
+                if oth_pref_x == old_x and oth_pref_y == old_y:
+                    return obj
+                elif oth_pref_x == oth_x and oth_pref_y == oth_y:
+                    break
+    
     def advance(self, old_world, new_world):
-        pass
+        for x, y, new_state in self.get_preferred_locations(old_world):
+            if not self.collision_check(x, y, old_world, new_world):
+                new_world.add_object(x, y, self, new_state)
+                break
+        else:
+            old_x, old_y = old_world.get_location(self)
+
+            state = old_world.get_state(self, None)
+            new_world.add_object(old_x, old_y, self, state)
+
+    def get_preferred_locations(self, world):
+        return ()
 
 class MarchingBaddie(Baddie):
-    def advance(self, old_world, new_world):
-        Baddie.advance(self, old_world, new_world)
-        
-        old_x, old_y = old_world.get_location(self)
+    def get_preferred_locations(self, world):
+        old_x, old_y = world.get_location(self)
 
-        direction = old_world.get_state(self, random.randint(0, 1) or -1)
+        direction = world.get_state(self, random.randint(0, 1) or -1)
 
-        new_x, new_y = old_x + direction, old_y
-        if self.collision_check(new_x, new_y, old_world, new_world):
-            direction = -direction
-            new_x, new_y = old_x, old_y + 1
-            if self.collision_check(new_x, new_y, old_world, new_world):
-                new_x, new_y = old_x + direction, old_y
-                if self.collision_check(new_x, new_y, old_world, new_world):
-                    new_x, new_y = old_x, old_y
-        
-        new_world.add_object(new_x, new_y, self, direction)
+        yield old_x + direction, old_y, direction
+        yield old_x, old_y + 1, -direction
+        yield old_x - direction, old_y, -direction
+        yield old_x, old_y, -direction
 
 class Turret(GameObject):
     def advance(self, old_world, new_world):
@@ -103,7 +121,8 @@ class World(object):
     def advance(self):
         result = World(self.width, self.height)
 
-        result.add_object(random.randint(0, self.width-1), 0, MarchingBaddie())
+        if random.randint(0, 3) == 0:
+            result.add_object(random.randint(0, self.width-1), 0, MarchingBaddie())
 
         for x in range(self.width):
             for y in range(self.height-1, -1, -1):
