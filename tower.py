@@ -31,6 +31,9 @@ class GameObject(object):
             if oth_x == -1:
                 return obj # advance the other obj, maybe?
 
+    def shoot(self, old_world, new_world):
+        pass
+
 class Baddie(GameObject):
     def collision_check(self, new_x, new_y, old_world, new_world):
         result = GameObject.collision_check(self, new_x, new_y, old_world, new_world)
@@ -78,9 +81,29 @@ class Turret(GameObject):
 
         new_world.add_object(old_x, old_y, self)
 
+    def shoot(self, old_world, new_world):
+        for x, y, in self.get_covered_locations(new_world):
+            obj = new_world.get_object(x, y)
+            if isinstance(obj, Baddie) and not new_world.is_destroyed(obj):
+                new_world.destroy_object(obj)
+                break
+
+    def get_covered_locations(self, world):
+        return ()
+
 class DirectionalTurret(Turret):
-    def advance(self, old_world, new_world):
-        Turret.advance(self, old_world, new_world)
+    direction = (0, -1)
+
+    def get_covered_locations(self, world):
+        x, y = world.get_location(self)
+        x_ofs, y_ofs = self.direction
+
+        while True:
+            x, y = x + x_ofs, y + y_ofs
+            obj = world.get_object(x, y)
+            if isinstance(obj, (OutOfBounds, Turret)):
+                break
+            yield x, y
 
 class OutOfBounds(object):
     pass
@@ -97,6 +120,8 @@ class World(object):
         self.object_to_pos = {}
 
         self.object_state = {}
+
+        self.destroyed_objects = set()
 
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
@@ -118,6 +143,12 @@ class World(object):
     def get_state(self, obj, default = None):
         return self.object_state.get(obj, default)
 
+    def destroy_object(self, obj):
+        self.destroyed_objects.add(obj)
+
+    def is_destroyed(self, obj):
+        return obj in self.destroyed_objects
+
     def advance(self):
         result = World(self.width, self.height)
 
@@ -127,8 +158,14 @@ class World(object):
         for x in range(self.width):
             for y in range(self.height-1, -1, -1):
                 obj = self.get_object(x, y)
-                if obj is not None:
+                if obj is not None and not self.is_destroyed(obj):
                     obj.advance(self, result)
+
+        for x in range(self.width):
+            for y in range(self.height-1, -1, -1):
+                obj = self.get_object(x, y)
+                if obj is not None and not self.is_destroyed(obj):
+                    obj.shoot(self, result)
 
         return result
 
