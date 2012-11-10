@@ -16,8 +16,33 @@
 import pygame
 from pygame.locals import *
 
+class World(object):
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+        self.objects = [None] * (width * height)
+
+        self.set_object(3, 3, 1)
+
+    def set_object(self, x, y, obj):
+        self.objects[x + y * self.width] = obj
+
+    def get_object(self, x, y):
+        return self.objects[x + y * self.width]
+
 def draw_world(world, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
+
+    for obj_x in range(world.width):
+        for obj_y in range(world.height):
+            obj = world.get_object(obj_x, obj_y)
+            if obj is not None:
+                draw_x = obj_x * w / world.width
+                draw_y = obj_y * h / world.height
+                draw_width = w / world.width
+                draw_height = h / world.height
+                surface.fill(Color(255,0,0,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
 def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
@@ -46,7 +71,7 @@ def run(world, x, y, w, h):
         
         #if not paused: #advance frame
 
-        draw_world(None, screen, x, y, w, h)
+        draw_world(world, screen, x, y, w, h)
 
         if paused:
             if pygame.font:
@@ -65,9 +90,11 @@ def main():
 
     pygame.init()
 
+    world = World(game_width, game_height)
+
     pygame.display.set_mode((width, height))
     
-    run(None, 0, 0, width, height)
+    run(world, 0, 0, width, height)
 
 if __name__ == '__main__':
     main()
