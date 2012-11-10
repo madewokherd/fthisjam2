@@ -200,6 +200,31 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                 else:
                     surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
+            obj = old_world.get_object(obj_x, obj_y)
+            if obj is not None and world.get_location(obj) == (-1,-1):
+                obj_x, obj_y = old_world.get_location(obj)
+                
+                draw_x = obj_x * w / world.width
+                draw_y = obj_y * h / world.height
+                
+                full_draw_width = w / world.width
+                full_draw_height = h / world.height
+
+                draw_width = int((1.0-t) * full_draw_width)
+                draw_height = int((1.0-t) * full_draw_height)
+
+                if draw_width > 4 and draw_height > 4:
+                    draw_x += (full_draw_width - draw_width) / 2
+                    draw_y += (full_draw_height - draw_height) / 2
+                
+                    surface.fill(Color(0,0,0,255), Rect(draw_x, draw_y, draw_width, draw_height))
+                    if isinstance(obj, Baddie):
+                        surface.fill(Color(255,0,0,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
+                    elif isinstance(obj, Turret):
+                        surface.fill(Color(0,0,255,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
+                    else:
+                        surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
+
 def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
     clock = pygame.time.Clock()
