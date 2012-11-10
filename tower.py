@@ -16,6 +16,19 @@
 import pygame
 from pygame.locals import *
 
+class Baddie(object):
+    def advance(self, old_world, new_world):
+        pass
+
+class FallingBaddie(Baddie):
+    def advance(self, old_world, new_world):
+        old_x, old_y = old_world.get_location(self)
+
+        new_x, new_y = old_x, old_y + 1
+        
+        if 0 <= new_x < old_world.width and 0 <= new_y < old_world.height:
+            new_world.add_object(old_x, old_y + 1, self)
+
 class World(object):
     def __init__(self, width, height):
         self.width = width
@@ -23,13 +36,29 @@ class World(object):
 
         self.objects = [None] * (width * height)
 
-        self.set_object(3, 3, 1)
+        self.object_to_pos = {}
 
-    def set_object(self, x, y, obj):
+    def add_object(self, x, y, obj):
         self.objects[x + y * self.width] = obj
+
+        self.object_to_pos[obj] = (x, y)
 
     def get_object(self, x, y):
         return self.objects[x + y * self.width]
+
+    def get_location(self, obj):
+        return self.object_to_pos.get(obj, (-1, -1))
+
+    def advance(self):
+        result = World(self.width, self.height)
+
+        for x in range(self.width):
+            for y in range(self.height-1, -1, -1):
+                obj = self.get_object(x, y)
+                if obj is not None:
+                    obj.advance(self, result)
+
+        return result
 
 def draw_world(world, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
@@ -48,6 +77,7 @@ def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
     clock = pygame.time.Clock()
     paused = False
+    frame = 0
 
     while True:
         if not paused:
@@ -69,7 +99,10 @@ def run(world, x, y, w, h):
             elif paused:
                 continue
         
-        #if not paused: #advance frame
+        if not paused:
+            frame += 1
+            if frame % 20 == 0:
+                world = world.advance()
 
         draw_world(world, screen, x, y, w, h)
 
@@ -91,6 +124,8 @@ def main():
     pygame.init()
 
     world = World(game_width, game_height)
+
+    world.add_object(3, 0, FallingBaddie())
 
     pygame.display.set_mode((width, height))
     
