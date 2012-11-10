@@ -136,10 +136,11 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                 
                 draw_width = w / world.width
                 draw_height = h / world.height
+                surface.fill(Color(0,0,0,255), Rect(draw_x, draw_y, draw_width, draw_height))
                 if isinstance(obj, Baddie):
-                    surface.fill(Color(255,0,0,255), Rect(draw_x, draw_y, draw_width, draw_height))
+                    surface.fill(Color(255,0,0,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
                 elif isinstance(obj, Turret):
-                    surface.fill(Color(0,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
+                    surface.fill(Color(0,0,255,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
                 else:
                     surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
