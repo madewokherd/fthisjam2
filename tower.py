@@ -123,6 +123,8 @@ class World(object):
 
         self.destroyed_objects = {}
 
+        self.mouse_pos = (0, 0)
+
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
 
@@ -170,10 +172,15 @@ class World(object):
                 if obj is not None and not self.is_destroyed(obj):
                     obj.shoot(self, result)
 
+        result.mouse_pos = self.mouse_pos
+
         return result
 
     def clicked(self, x, y):
         self.add_object(x, y, DirectionalTurret())
+
+    def hover(self, x, y):
+        self.mouse_pos = (x, y)
 
 def draw_world(old_world, world, t, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
@@ -249,6 +256,22 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                     else:
                         surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
+    if True: #replace with "can place turret" condition
+        # draw turret to be placed
+
+        mouse_x, mouse_y = world.mouse_pos
+
+        draw_x = mouse_x * w / world.width
+        draw_y = mouse_y * h / world.height
+        
+        draw_width = w / world.width
+        draw_height = h / world.height
+        obj_width = w / world.width * 2 / 3
+        obj_height = h / world.height * 2 / 3
+        draw_x += (draw_width - obj_width) / 2
+        draw_y += (draw_height - obj_height) / 2
+        surface.fill(Color(128,128,255,168), Rect(draw_x, draw_y, obj_width, obj_height))
+
 def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
     clock = pygame.time.Clock()
@@ -276,8 +299,13 @@ def run(world, x, y, w, h):
             elif event.type == MOUSEBUTTONDOWN:
                 press_x = event.pos[0] * world.width / w + x
                 press_y = event.pos[1] * world.height / h + y
+                world.hover(press_x, press_y)
                 if event.button == 1:
                     world.clicked(press_x, press_y)
+            elif event.type == pygame.MOUSEMOTION:
+                press_x = event.pos[0] * world.width / w + x
+                press_y = event.pos[1] * world.height / h + y
+                world.hover(press_x, press_y)
             elif event.type == pygame.USEREVENT:
                 frame += 1
                 if frame % 20 == 0:
