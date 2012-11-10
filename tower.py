@@ -85,7 +85,7 @@ class Turret(GameObject):
         for x, y, in self.get_covered_locations(new_world):
             obj = new_world.get_object(x, y)
             if isinstance(obj, Baddie) and not new_world.is_destroyed(obj):
-                new_world.destroy_object(obj)
+                new_world.destroy_object(obj, self)
                 break
 
     def get_covered_locations(self, world):
@@ -121,7 +121,7 @@ class World(object):
 
         self.object_state = {}
 
-        self.destroyed_objects = set()
+        self.destroyed_objects = {}
 
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
@@ -143,11 +143,14 @@ class World(object):
     def get_state(self, obj, default = None):
         return self.object_state.get(obj, default)
 
-    def destroy_object(self, obj):
-        self.destroyed_objects.add(obj)
+    def destroy_object(self, obj, destroyed_by=None):
+        self.destroyed_objects[obj] = destroyed_by
 
     def is_destroyed(self, obj):
         return obj in self.destroyed_objects
+
+    def destroyer(self, obj):
+        return self.destroyed_objects.get(obj, None)
 
     def advance(self):
         result = World(self.width, self.height)
@@ -174,7 +177,7 @@ class World(object):
 
 def draw_world(old_world, world, t, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
-    
+
     for obj_x in range(world.width):
         for obj_y in range(world.height):
             obj = world.get_object(obj_x, obj_y)
@@ -199,6 +202,27 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                     surface.fill(Color(0,0,255,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
                 else:
                     surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
+
+                destroyer = world.destroyer(obj)
+                if destroyer is not None:
+                    prev_x, prev_y = world.get_location(destroyer)
+                    
+                    if prev_x in (obj_x, -1):
+                        draw_x = obj_x * w / world.width
+                    else:
+                        draw_x = int(((1.0-t) * prev_x + t * obj_x) * w / world.width)
+                    if prev_y in (obj_y, -1):
+                        draw_y = obj_y * h / world.height
+                    else:
+                        draw_y = int(((1.0-t) * prev_y + t * obj_y) * h / world.height)
+                    
+                    draw_width = w / world.width
+                    draw_height = h / world.height
+                    bullet_width = w / world.width / 8
+                    bullet_height = h / world.height / 8
+                    draw_x += (draw_width - bullet_width) / 2
+                    draw_y += (draw_height - bullet_height) / 2
+                    surface.fill(Color(255,128,0,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
 
             obj = old_world.get_object(obj_x, obj_y)
             if obj is not None and world.get_location(obj) == (-1,-1):
