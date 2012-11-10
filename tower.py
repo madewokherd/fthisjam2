@@ -25,12 +25,24 @@ class Baddie(object):
 
 class FallingBaddie(Baddie):
     def advance(self, old_world, new_world):
+        Baddie.advance(self, old_world, new_world)
+        
         old_x, old_y = old_world.get_location(self)
 
         new_x, new_y = old_x, old_y + 1
         
         if 0 <= new_x < old_world.width and 0 <= new_y < old_world.height:
             new_world.add_object(old_x, old_y + 1, self)
+
+class Turret(object):
+    def advance(self, old_world, new_world):
+        old_x, old_y = old_world.get_location(self)
+
+        new_world.add_object(old_x, old_y, self)
+
+class DirectionalTurret(Turret):
+    def advance(self, old_world, new_world):
+        Turret.advance(self, old_world, new_world)
 
 class World(object):
     def __init__(self, width, height):
@@ -66,7 +78,7 @@ class World(object):
         return result
 
     def clicked(self, x, y):
-        self.add_object(x, y, FallingBaddie())
+        self.add_object(x, y, DirectionalTurret())
 
 def draw_world(world, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
@@ -79,7 +91,12 @@ def draw_world(world, surface, x, y, w, h):
                 draw_y = obj_y * h / world.height
                 draw_width = w / world.width
                 draw_height = h / world.height
-                surface.fill(Color(255,0,0,255), Rect(draw_x, draw_y, draw_width, draw_height))
+                if isinstance(obj, Baddie):
+                    surface.fill(Color(255,0,0,255), Rect(draw_x, draw_y, draw_width, draw_height))
+                elif isinstance(obj, Turret):
+                    surface.fill(Color(0,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
+                else:
+                    surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
 def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
