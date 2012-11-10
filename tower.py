@@ -13,6 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import random
+random.seed()
+
 import pygame
 from pygame.locals import *
 
@@ -51,6 +54,8 @@ class World(object):
 
     def advance(self):
         result = World(self.width, self.height)
+
+        result.add_object(random.randint(0, self.width-1), 0, FallingBaddie())
 
         for x in range(self.width):
             for y in range(self.height-1, -1, -1):
