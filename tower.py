@@ -20,16 +20,26 @@ import pygame
 from pygame.locals import *
 
 class GameObject(object):
+    in_collision_check = False
+    
     def collision_check(self, new_x, new_y, old_world, new_world):
         obj = new_world.get_object(new_x, new_y)
-        if obj is not None:
+        if obj is not None and obj is not self:
             return obj
 
         obj = old_world.get_object(new_x, new_y)
-        if obj is not None and obj is not self:
+        if obj is not None and obj is not self and not old_world.is_destroyed(obj):
             oth_x, oth_y = new_world.get_location(obj)
             if oth_x == -1:
-                return obj # advance the other obj, maybe?
+                if self.in_collision_check:
+                    return True
+                else:
+                    self.in_collision_check = True
+                    obj.advance(old_world, new_world)
+                    self.in_collision_check = False
+                    oth_x, oth_y = new_world.get_location(obj)
+                    if (oth_x, oth_y) == (new_x, new_y):
+                        return True
 
     def shoot(self, old_world, new_world):
         pass
@@ -259,7 +269,7 @@ class World(object):
         for x in range(self.width):
             for y in range(self.height-1, -1, -1):
                 obj = self.get_object(x, y)
-                if obj is not None and not self.is_destroyed(obj):
+                if obj is not None and not self.is_destroyed(obj) and result.get_location(obj) == (-1,-1):
                     obj.advance(self, result)
 
         for x in range(self.width):
