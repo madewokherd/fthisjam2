@@ -165,6 +165,17 @@ class KnightTurret(Turret):
         for xofs, yofs in ((-1,2),(1,2),(-1,-2),(1,-2),(-2,1),(2,1),(-2,-1),(2,-1)):
             yield x + xofs, y + yofs
 
+class BishopTurret(Turret):
+    def get_covered_locations_at(self, world, x, y):
+        for x_ofs, y_ofs in ((-1,-1), (-1,1), (1,-1), (1,1)):
+            cx, cy = x, y
+            for i in range(2):
+                cx, cy = cx + x_ofs, cy + y_ofs
+                obj = world.get_object(cx, cy)
+                if isinstance(obj, (OutOfBounds, Turret)):
+                    break
+                yield cx, cy
+
 class OutOfBounds(object):
     pass
 
@@ -263,13 +274,15 @@ class World(object):
         self.shot_animations.append((source, target))
 
     def get_random_turret(self):
-        r = random.randint(0,4)
+        r = random.randint(0,5)
         if r < 4:
             result = DirectionalTurret()
             result.direction = ((-1,0),(1,0),(0,-1),(0,1))[r]
             return result
         elif r == 4:
             return KnightTurret()
+        elif r == 5:
+            return BishopTurret()
 
 def draw_world(old_world, world, t, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
