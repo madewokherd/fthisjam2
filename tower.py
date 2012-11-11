@@ -79,13 +79,30 @@ class Turret(GameObject):
     def advance(self, old_world, new_world):
         old_x, old_y = old_world.get_location(self)
 
-        new_world.add_object(old_x, old_y, self)
+        cooldown, health = old_world.get_state(self, (0, 12))
+
+        if cooldown > 0:
+            cooldown -= 1
+
+        new_world.add_object(old_x, old_y, self, (cooldown, health))
 
     def shoot(self, old_world, new_world):
+        cooldown, health = old_world.get_state(self, (0, 12))
+        if cooldown:
+            return
+        
         for x, y, in self.get_covered_locations(new_world):
             obj = new_world.get_object(x, y)
             if isinstance(obj, Baddie) and not new_world.is_destroyed(obj):
                 new_world.destroy_object(obj, self)
+
+                old_x, old_y = old_world.get_location(self)
+                cooldown = 3
+                health -= 1
+                if health <= 0:
+                    new_world.destroy_object(self)
+                else:
+                    new_world.add_object(old_x, old_y, self, (cooldown, health))
                 break
 
     def get_covered_locations(self, world):
