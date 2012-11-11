@@ -67,6 +67,28 @@ class Baddie(GameObject):
     def get_preferred_locations(self, world):
         return ()
 
+    def shoot(self, old_world, new_world):
+        target = None
+        target_health = 0
+        my_x, my_y = new_world.get_location(self)
+        for xofs, yofs in ((-1,0),(1,0),(0,-1),(0,1)):
+            obj = new_world.get_object(my_x + xofs, my_y + yofs)
+            if isinstance(obj, Turret):
+                cooldown, health = new_world.get_state(obj)
+                if target is None or health < target_health:
+                    target = obj
+                    target_health = health
+
+        if target is not None:
+            cooldown, health = new_world.get_state(target)
+            new_health = health - 3
+            x, y = new_world.get_location(target)
+            new_world.add_shot_animation(self, target)
+            if new_health <= 0:
+                new_world.destroy_object(target, self)
+            else:
+                new_world.add_object(x, y, target, (cooldown, new_health))
+
 class MarchingBaddie(Baddie):
     def get_preferred_locations(self, world):
         old_x, old_y = world.get_location(self)
@@ -96,13 +118,14 @@ class Turret(GameObject):
         new_world.add_object(old_x, old_y, self, (cooldown, health))
 
     def shoot(self, old_world, new_world):
-        cooldown, health = old_world.get_state(self, (0, 12))
+        cooldown, health = new_world.get_state(self, (0, 12))
         if cooldown:
             return
         
         for x, y, in self.get_covered_locations(new_world):
             obj = new_world.get_object(x, y)
             if isinstance(obj, Baddie) and not new_world.is_destroyed(obj):
+                new_world.add_shot_animation(self, obj)
                 new_world.destroy_object(obj, self)
 
                 old_x, old_y = old_world.get_location(self)
@@ -155,6 +178,8 @@ class World(object):
         self.mouse_pos = (0, 0)
 
         self.place_turret_cooldown = 0
+
+        self.shot_animations = []
 
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
@@ -218,6 +243,9 @@ class World(object):
 
     def hover(self, x, y):
         self.mouse_pos = (x, y)
+
+    def add_shot_animation(self, source, target):
+        self.shot_animations.append((source, target))
 
 def draw_world(old_world, world, t, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
@@ -285,27 +313,6 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                 else:
                     surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
-                destroyer = world.destroyer(obj)
-                if destroyer is not None:
-                    prev_x, prev_y = world.get_location(destroyer)
-                    
-                    if prev_x in (obj_x, -1):
-                        draw_x = obj_x * w / world.width
-                    else:
-                        draw_x = int(((1.0-t) * prev_x + t * obj_x) * w / world.width)
-                    if prev_y in (obj_y, -1):
-                        draw_y = obj_y * h / world.height
-                    else:
-                        draw_y = int(((1.0-t) * prev_y + t * obj_y) * h / world.height)
-                    
-                    draw_width = w / world.width
-                    draw_height = h / world.height
-                    bullet_width = w / world.width / 8
-                    bullet_height = h / world.height / 8
-                    draw_x += (draw_width - bullet_width) / 2
-                    draw_y += (draw_height - bullet_height) / 2
-                    surface.fill(Color(255,128,0,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
-
             obj = old_world.get_object(obj_x, obj_y)
             if obj is not None and world.get_location(obj) == (-1,-1):
                 obj_x, obj_y = old_world.get_location(obj)
@@ -330,6 +337,27 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                         surface.fill(Color(0,0,255,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
                     else:
                         surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
+
+    for source, target in world.shot_animations:
+        prev_x, prev_y = world.get_location(source)
+        obj_x, obj_y = world.get_location(target)
+        
+        if prev_x in (obj_x, -1):
+            draw_x = obj_x * w / world.width
+        else:
+            draw_x = int(((1.0-t) * prev_x + t * obj_x) * w / world.width)
+        if prev_y in (obj_y, -1):
+            draw_y = obj_y * h / world.height
+        else:
+            draw_y = int(((1.0-t) * prev_y + t * obj_y) * h / world.height)
+        
+        draw_width = w / world.width
+        draw_height = h / world.height
+        bullet_width = w / world.width / 8
+        bullet_height = h / world.height / 8
+        draw_x += (draw_width - bullet_width) / 2
+        draw_y += (draw_height - bullet_height) / 2
+        surface.fill(Color(255,128,0,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
 
     if not world.place_turret_cooldown:
         # draw turret to be placed
