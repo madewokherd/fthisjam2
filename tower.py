@@ -91,7 +91,7 @@ class Baddie(GameObject):
 
         if target is not None:
             cooldown, health = new_world.get_state(target)
-            new_health = health - 3
+            new_health = health - 4
             x, y = new_world.get_location(target)
             new_world.add_shot_animation(self, target)
             if new_health <= 0:
@@ -114,8 +114,8 @@ class MarchingBaddie(Baddie):
         return random.randint(0, 1) or -1
 
 class Turret(GameObject):
-    cooldown = 2
-    starting_health = 12
+    cooldown = 1
+    starting_health = 4
     
     def advance(self, old_world, new_world):
         old_x, old_y = old_world.get_location(self)
@@ -292,7 +292,7 @@ class World(object):
     def clicked(self, x, y):
         if not self.place_turret_cooldown and y != 0:
             self.add_object(x, y, self.next_turret)
-            self.place_turret_cooldown = 4
+            self.place_turret_cooldown = 3
 
     def hover(self, x, y):
         self.mouse_pos = (x, y)
@@ -306,7 +306,7 @@ class World(object):
             result = DirectionalTurret()
             result.direction = ((-1,0),(1,0),(0,-1),(0,1))[r]
             if r == 3:
-                result.starting_health = 96
+                result.starting_health = 32
                 result.cooldown = 1
             return result
         elif r == 4:
