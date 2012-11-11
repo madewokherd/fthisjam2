@@ -54,7 +54,7 @@ class Baddie(GameObject):
             return result
 
         obj = old_world.get_object(new_x, new_y)
-        if obj is not None and obj is not self and isinstance(obj, Baddie):
+        if obj is not None and obj is not self and isinstance(obj, Baddie) and not old_world.is_destroyed(obj):
             old_x, old_y = old_world.get_location(self)
             oth_x, oth_y = new_world.get_location(obj)
             for oth_pref_x, oth_pref_y, oth_pref_state in obj.get_preferred_locations(old_world):
