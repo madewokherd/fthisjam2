@@ -34,6 +34,9 @@ class GameObject(object):
     def shoot(self, old_world, new_world):
         pass
 
+    def get_initial_state(self):
+        pass
+
 class Baddie(GameObject):
     def collision_check(self, new_x, new_y, old_world, new_world):
         result = GameObject.collision_check(self, new_x, new_y, old_world, new_world)
@@ -68,12 +71,15 @@ class MarchingBaddie(Baddie):
     def get_preferred_locations(self, world):
         old_x, old_y = world.get_location(self)
 
-        direction = world.get_state(self, random.randint(0, 1) or -1)
+        direction = world.get_state(self)
 
         yield old_x + direction, old_y, direction
         yield old_x, old_y + 1, -direction
         yield old_x - direction, old_y, -direction
         yield old_x, old_y, -direction
+
+    def get_initial_state(self):
+        return random.randint(0, 1) or -1
 
 class Turret(GameObject):
     cooldown = 3
@@ -82,7 +88,7 @@ class Turret(GameObject):
     def advance(self, old_world, new_world):
         old_x, old_y = old_world.get_location(self)
 
-        cooldown, health = old_world.get_state(self, (0, self.starting_health))
+        cooldown, health = old_world.get_state(self)
 
         if cooldown > 0:
             cooldown -= 1
@@ -110,6 +116,9 @@ class Turret(GameObject):
 
     def get_covered_locations(self, world):
         return ()
+
+    def get_initial_state(self):
+        return (0, self.starting_health)
 
 class DirectionalTurret(Turret):
     direction = (0, -1)
@@ -152,8 +161,10 @@ class World(object):
 
         self.object_to_pos[obj] = (x, y)
 
-        if state is not None:
-            self.object_state[obj] = state
+        if state is None:
+            state = obj.get_initial_state()
+
+        self.object_state[obj] = state
 
     def get_object(self, x, y):
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -231,6 +242,27 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                 surface.fill(Color(0,0,0,255), Rect(draw_x, draw_y, draw_width, draw_height))
                 if isinstance(obj, Baddie):
                     surface.fill(Color(255,0,0,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
+
+                    if isinstance(obj, MarchingBaddie):
+                        direction = world.get_state(obj)
+                        prev_direction = old_world.get_state(obj, direction)
+
+                        direction = ((1.0-t) * prev_direction + t * direction)
+
+                        vert_x = int((direction + 1.5) * draw_width / 3)
+
+                        pygame.draw.line(surface, Color(0,0,0,255),
+                                         (draw_x + vert_x, draw_y + draw_height / 2),
+                                         (draw_x + vert_x, draw_y + draw_height * 5 / 6),
+                                         2)
+
+                        vert_x = int((direction + 2.0) * draw_width / 6)
+
+                        pygame.draw.line(surface, Color(0,0,0,255),
+                                         (draw_x + vert_x, draw_y + draw_height * 5 / 6),
+                                         (draw_x + vert_x + draw_width / 3, draw_y + draw_height * 5 / 6),
+                                         2)
+                                    
                 elif isinstance(obj, Turret):
                     surface.fill(Color(0,0,255,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
 
