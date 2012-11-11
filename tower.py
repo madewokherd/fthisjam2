@@ -137,8 +137,12 @@ class Turret(GameObject):
                     new_world.add_object(old_x, old_y, self, (cooldown, health))
                 break
 
-    def get_covered_locations(self, world):
+    def get_covered_locations_at(self, world, x, y):
         return ()
+
+    def get_covered_locations(self, world):
+        x, y = world.get_location(self)
+        return self.get_covered_locations_at(world, x, y)
 
     def get_initial_state(self):
         return (1, self.starting_health)
@@ -146,8 +150,7 @@ class Turret(GameObject):
 class DirectionalTurret(Turret):
     direction = (0, -1)
 
-    def get_covered_locations(self, world):
-        x, y = world.get_location(self)
+    def get_covered_locations_at(self, world, x, y):
         x_ofs, y_ofs = self.direction
 
         while True:
@@ -180,6 +183,8 @@ class World(object):
         self.place_turret_cooldown = 0
 
         self.shot_animations = []
+
+        self.next_turret = self.get_random_turret()
 
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
@@ -232,7 +237,11 @@ class World(object):
 
         result.mouse_pos = self.mouse_pos
 
-        result.place_turret_cooldown = self.place_turret_cooldown - 1 if self.place_turret_cooldown > 0 else 0
+        result.place_turret_cooldown = self.place_turret_cooldown
+        if result.place_turret_cooldown != 0:
+            result.place_turret_cooldown -= 1
+            if result.place_turret_cooldown == 0:
+                self.next_turret = self.get_random_turret()
 
         return result
 
@@ -246,6 +255,9 @@ class World(object):
 
     def add_shot_animation(self, source, target):
         self.shot_animations.append((source, target))
+
+    def get_random_turret(self):
+        return DirectionalTurret()
 
 def draw_world(old_world, world, t, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
@@ -364,8 +376,8 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
 
         mouse_x, mouse_y = world.mouse_pos
 
-        draw_x = mouse_x * w / world.width
-        draw_y = mouse_y * h / world.height
+        draw_x = mouse_x * w / world.width + x
+        draw_y = mouse_y * h / world.height + y
         
         draw_width = w / world.width
         draw_height = h / world.height
@@ -374,6 +386,27 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
         draw_x += (draw_width - obj_width) / 2
         draw_y += (draw_height - obj_height) / 2
         pygame.draw.rect(surface, Color(128,128,255,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
+
+        for target_x, target_y in world.next_turret.get_covered_locations_at(world, mouse_x, mouse_y):
+            draw_x = target_x * w / world.width + x
+            draw_y = target_y * h / world.height + y
+
+            obj_width = w / world.width * 2 / 3
+            obj_height = h / world.height * 2 / 3
+            draw_x += (draw_width - obj_width) / 2
+            draw_y += (draw_height - obj_height) / 2
+
+            pygame.draw.line(surface, Color(128,0,0,255),
+                             (draw_x, draw_y),
+                             (draw_x + obj_width, draw_y + obj_height),
+                             2)
+
+            pygame.draw.line(surface, Color(128,0,0,255),
+                             (draw_x, draw_y + obj_height),
+                             (draw_x + obj_width, draw_y),
+                             2)
+
+            pygame.draw.rect(surface, Color(128,0,0,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
 
 def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
