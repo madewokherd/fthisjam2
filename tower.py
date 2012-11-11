@@ -238,16 +238,17 @@ class World(object):
         result.mouse_pos = self.mouse_pos
 
         result.place_turret_cooldown = self.place_turret_cooldown
+        result.next_turret = self.next_turret
         if result.place_turret_cooldown != 0:
             result.place_turret_cooldown -= 1
             if result.place_turret_cooldown == 0:
-                self.next_turret = self.get_random_turret()
+                result.next_turret = result.get_random_turret()
 
         return result
 
     def clicked(self, x, y):
         if not self.place_turret_cooldown:
-            self.add_object(x, y, DirectionalTurret())
+            self.add_object(x, y, self.next_turret)
             self.place_turret_cooldown = 4
 
     def hover(self, x, y):
@@ -257,7 +258,11 @@ class World(object):
         self.shot_animations.append((source, target))
 
     def get_random_turret(self):
-        return DirectionalTurret()
+        r = random.randint(0,3)
+        if r < 4:
+            result = DirectionalTurret()
+            result.direction = ((-1,0),(1,0),(0,-1),(0,1))[r]
+            return result
 
 def draw_world(old_world, world, t, surface, x, y, w, h):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
