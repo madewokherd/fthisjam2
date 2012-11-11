@@ -512,7 +512,10 @@ def run(world, x, y, w, h):
             elif event.type == pygame.USEREVENT:
                 frame += 1
                 if frame % 20 == 0:
-                    old_world, world = world, world.advance()
+                    if world.place_turret_cooldown:
+                        old_world, world = world, world.advance()
+                    else:
+                        frame -= 1
 
         draw_world(old_world, world, (frame % 20) / 20.0, screen, x, y, w, h)
 
