@@ -76,10 +76,13 @@ class MarchingBaddie(Baddie):
         yield old_x, old_y, -direction
 
 class Turret(GameObject):
+    cooldown = 3
+    starting_health = 12
+    
     def advance(self, old_world, new_world):
         old_x, old_y = old_world.get_location(self)
 
-        cooldown, health = old_world.get_state(self, (0, 12))
+        cooldown, health = old_world.get_state(self, (0, self.starting_health))
 
         if cooldown > 0:
             cooldown -= 1
@@ -97,7 +100,7 @@ class Turret(GameObject):
                 new_world.destroy_object(obj, self)
 
                 old_x, old_y = old_world.get_location(self)
-                cooldown = 3
+                cooldown = self.cooldown
                 health -= 1
                 if health <= 0:
                     new_world.destroy_object(self)
@@ -230,6 +233,23 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                     surface.fill(Color(255,0,0,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
                 elif isinstance(obj, Turret):
                     surface.fill(Color(0,0,255,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
+
+                    cooldown, health = world.get_state(obj, (0, obj.starting_health))
+
+                    #draw stats
+                    font = pygame.font.Font(None, draw_height / 3)
+
+                    # cooldown
+                    text = font.render("%s/%s" % (cooldown, obj.cooldown)
+                        , 1, Color(240, 240, 240, 255))
+                    textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height/3)
+                    surface.blit(text, textpos)
+
+                    # health
+                    text = font.render("%s/%s" % (health, obj.starting_health)
+                        , 1, Color(240, 240, 240, 255))
+                    textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height*2/3)
+                    surface.blit(text, textpos)
                 else:
                     surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
