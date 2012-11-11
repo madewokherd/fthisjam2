@@ -163,7 +163,9 @@ class DirectionalTurret(Turret):
 class KnightTurret(Turret):
     def get_covered_locations_at(self, world, x, y):
         for xofs, yofs in ((-1,2),(1,2),(-1,-2),(1,-2),(-2,1),(2,1),(-2,-1),(2,-1)):
-            yield x + xofs, y + yofs
+            obj = world.get_object(x + xofs, y + yofs)
+            if not isinstance(obj, (OutOfBounds, Turret)):
+                yield x + xofs, y + yofs
 
 class BishopTurret(Turret):
     def get_covered_locations_at(self, world, x, y):
