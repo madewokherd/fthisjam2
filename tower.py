@@ -375,6 +375,18 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                     else:
                         surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
+    for obj_x in range(world.width):
+        for obj_y in range(world.height):
+            obj = world.get_object(obj_x, obj_y)
+            if isinstance(obj, Turret):
+                for obj_x, obj_y in obj.get_covered_locations(world):
+                    draw_x = obj_x * w / world.width
+                    draw_y = obj_y * h / world.height
+                    
+                    draw_width = w / world.width
+                    draw_height = h / world.height
+                    surface.fill(Color(48,48,48,255), Rect(draw_x, draw_y, draw_width, draw_height), BLEND_ADD)
+
     for source, target in world.shot_animations:
         prev_x, prev_y = old_world.get_location(source)
         obj_x, obj_y = world.get_location(target)
@@ -432,7 +444,7 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                              2)
 
             pygame.draw.rect(surface, Color(128,0,0,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
-
+    
 def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
     clock = pygame.time.Clock()
