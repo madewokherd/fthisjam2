@@ -381,9 +381,9 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
         for obj_y in range(world.height):
             obj = world.get_object(obj_x, obj_y)
             if isinstance(obj, Turret):
-                for obj_x, obj_y in obj.get_covered_locations(world):
-                    draw_x = obj_x * w / world.width
-                    draw_y = obj_y * h / world.height
+                for cx, cy in obj.get_covered_locations(world):
+                    draw_x = cx * w / world.width
+                    draw_y = cy * h / world.height
                     
                     draw_width = w / world.width
                     draw_height = h / world.height
