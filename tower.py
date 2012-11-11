@@ -204,6 +204,8 @@ class World(object):
 
         self.next_turret = self.get_random_turret()
 
+        self.waves = []
+
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
 
@@ -235,11 +237,24 @@ class World(object):
     def destroyer(self, obj):
         return self.destroyed_objects.get(obj, None)
 
+    def make_random_wave(self):
+        count = random.randint(3,12)
+        enemy_type = MarchingBaddie
+        enemy_initial_state = enemy_type().get_initial_state()
+        spawnx = random.randint(0,self.width-1)
+        return count, enemy_type, enemy_initial_state, spawnx
+
     def advance(self):
         result = World(self.width, self.height)
 
-        if random.randint(0, 3) == 0:
-            result.add_object(random.randint(0, self.width-1), 0, MarchingBaddie())
+        while len(self.waves) < 1:
+            self.waves.append(self.make_random_wave())
+
+        for count, enemy_type, enemy_initial_state, spawnx in self.waves:
+            enemy = enemy_type()
+            result.add_object(spawnx, 0, enemy, enemy_initial_state)
+            if count > 1:
+                result.waves.append((count-1, enemy_type, enemy_initial_state, spawnx))
 
         for x in range(self.width):
             for y in range(self.height-1, -1, -1):
