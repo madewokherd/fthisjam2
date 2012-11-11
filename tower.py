@@ -114,7 +114,7 @@ class MarchingBaddie(Baddie):
         return random.randint(0, 1) or -1
 
 class Turret(GameObject):
-    cooldown = 3
+    cooldown = 2
     starting_health = 12
     
     def advance(self, old_world, new_world):
