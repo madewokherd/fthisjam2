@@ -306,7 +306,7 @@ class World(object):
             result = DirectionalTurret()
             result.direction = ((-1,0),(1,0),(0,-1),(0,1))[r]
             if r == 3:
-                result.starting_health = 32
+                result.starting_health = 36
                 result.cooldown = 1
             return result
         elif r == 4:
