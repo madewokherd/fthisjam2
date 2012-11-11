@@ -290,7 +290,7 @@ class World(object):
         return result
 
     def clicked(self, x, y):
-        if not self.place_turret_cooldown:
+        if not self.place_turret_cooldown and y != 0:
             self.add_object(x, y, self.next_turret)
             self.place_turret_cooldown = 4
 
@@ -443,37 +443,38 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
 
         mouse_x, mouse_y = world.mouse_pos
 
-        draw_x = mouse_x * w / world.width + x
-        draw_y = mouse_y * h / world.height + y
-        
-        draw_width = w / world.width
-        draw_height = h / world.height
-        obj_width = w / world.width * 2 / 3
-        obj_height = h / world.height * 2 / 3
-        draw_x += (draw_width - obj_width) / 2
-        draw_y += (draw_height - obj_height) / 2
-        pygame.draw.rect(surface, Color(128,128,255,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
-
-        for target_x, target_y in world.next_turret.get_covered_locations_at(world, mouse_x, mouse_y):
-            draw_x = target_x * w / world.width + x
-            draw_y = target_y * h / world.height + y
-
+        if mouse_y != 0:
+            draw_x = mouse_x * w / world.width + x
+            draw_y = mouse_y * h / world.height + y
+            
+            draw_width = w / world.width
+            draw_height = h / world.height
             obj_width = w / world.width * 2 / 3
             obj_height = h / world.height * 2 / 3
             draw_x += (draw_width - obj_width) / 2
             draw_y += (draw_height - obj_height) / 2
+            pygame.draw.rect(surface, Color(128,128,255,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
 
-            pygame.draw.line(surface, Color(128,0,0,255),
-                             (draw_x, draw_y),
-                             (draw_x + obj_width, draw_y + obj_height),
-                             2)
+            for target_x, target_y in world.next_turret.get_covered_locations_at(world, mouse_x, mouse_y):
+                draw_x = target_x * w / world.width + x
+                draw_y = target_y * h / world.height + y
 
-            pygame.draw.line(surface, Color(128,0,0,255),
-                             (draw_x, draw_y + obj_height),
-                             (draw_x + obj_width, draw_y),
-                             2)
+                obj_width = w / world.width * 2 / 3
+                obj_height = h / world.height * 2 / 3
+                draw_x += (draw_width - obj_width) / 2
+                draw_y += (draw_height - obj_height) / 2
 
-            pygame.draw.rect(surface, Color(128,0,0,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
+                pygame.draw.line(surface, Color(128,0,0,255),
+                                 (draw_x, draw_y),
+                                 (draw_x + obj_width, draw_y + obj_height),
+                                 2)
+
+                pygame.draw.line(surface, Color(128,0,0,255),
+                                 (draw_x, draw_y + obj_height),
+                                 (draw_x + obj_width, draw_y),
+                                 2)
+
+                pygame.draw.rect(surface, Color(128,0,0,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
     
 def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
