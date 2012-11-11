@@ -70,7 +70,7 @@ class Baddie(GameObject):
     def shoot(self, old_world, new_world):
         target = None
         target_health = 0
-        my_x, my_y = new_world.get_location(self)
+        my_x, my_y = old_world.get_location(self)
         for xofs, yofs in ((-1,0),(1,0),(0,-1),(0,1)):
             obj = new_world.get_object(my_x + xofs, my_y + yofs)
             if isinstance(obj, Turret):
@@ -141,7 +141,7 @@ class Turret(GameObject):
         return ()
 
     def get_initial_state(self):
-        return (0, self.starting_health)
+        return (1, self.starting_health)
 
 class DirectionalTurret(Turret):
     direction = (0, -1)
@@ -339,7 +339,7 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                         surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
     for source, target in world.shot_animations:
-        prev_x, prev_y = world.get_location(source)
+        prev_x, prev_y = old_world.get_location(source)
         obj_x, obj_y = world.get_location(target)
         
         if prev_x in (obj_x, -1):
