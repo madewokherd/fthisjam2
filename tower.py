@@ -402,10 +402,11 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
                     font = pygame.font.Font(None, draw_height / 3)
 
                     # cooldown
-                    text = font.render("%s/%s" % (cooldown, obj.cooldown)
-                        , 1, Color(240, 240, 240, 255))
-                    textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height/3)
-                    surface.blit(text, textpos)
+                    if obj.cooldown > 1:
+                        text = font.render("%s/%s" % (cooldown, obj.cooldown)
+                            , 1, Color(240, 240, 240, 255))
+                        textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height/3)
+                        surface.blit(text, textpos)
 
                     # health
                     text = font.render("%s/%s" % (health, obj.starting_health)
