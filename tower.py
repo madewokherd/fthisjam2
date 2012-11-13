@@ -113,6 +113,22 @@ class MarchingBaddie(Baddie):
     def get_initial_state(self):
         return random.randint(0, 1) or -1
 
+class FallingBaddie(Baddie):
+    def get_preferred_locations(self, world):
+        old_x, old_y = world.get_location(self)
+
+        direction = world.get_state(self)
+
+        yield old_x, old_y + 1, direction
+        yield old_x + direction, old_y + 1, direction
+        yield old_x - direction, old_y + 1, -direction
+        yield old_x + direction, old_y, direction
+        yield old_x - direction, old_y, -direction
+        yield old_x, old_y, -direction
+
+    def get_initial_state(self):
+        return random.randint(0, 1) or -1
+
 class Turret(GameObject):
     cooldown = 1
     starting_health = 4
@@ -249,7 +265,10 @@ class World(object):
 
     def make_random_wave(self):
         count = random.randint(3,12)
-        enemy_type = MarchingBaddie
+        if random.randint(0,1) == 0:
+            enemy_type = MarchingBaddie
+        else:
+            enemy_type = FallingBaddie
         enemy_initial_state = enemy_type().get_initial_state()
         spawnx = random.randint(0,self.width-1)
         return count, enemy_type, enemy_initial_state, spawnx
@@ -357,7 +376,23 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                                          (draw_x + vert_x, draw_y + draw_height * 5 / 6),
                                          (draw_x + vert_x + draw_width / 3, draw_y + draw_height * 5 / 6),
                                          2)
-                                    
+                    elif isinstance(obj, FallingBaddie):
+                        direction = world.get_state(obj)
+                        prev_direction = old_world.get_state(obj, direction)
+
+                        direction = ((1.0-t) * prev_direction + t * direction)
+
+                        vert_x1 = int((direction + 1.5) * draw_width / 3)
+
+                        vert_x2 = int((direction + 2.0) * draw_width / 6)
+
+                        pygame.draw.polygon(surface, Color(0,0,0,255),
+                                            [(draw_x + vert_x1, draw_y + draw_height / 2),
+                                             (draw_x + vert_x2 + draw_width / 3, draw_y + draw_height * 5 / 6),
+                                             (draw_x + vert_x1, draw_y + draw_height * 5 / 6),
+                                             (draw_x + vert_x2, draw_y + draw_height * 5 / 6),
+                                             ])
+
                 elif isinstance(obj, Turret):
                     surface.fill(Color(0,0,255,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
 
