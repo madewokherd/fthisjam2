@@ -273,7 +273,7 @@ class World(object):
         spawnx = random.randint(0,self.width-1)
         return count, enemy_type, enemy_initial_state, spawnx
 
-    def advance(self):
+    def advance(self, shoot=True):
         result = World(self.width, self.height)
 
         while len(self.waves) < 1:
@@ -291,11 +291,12 @@ class World(object):
                 if obj is not None and not self.is_destroyed(obj) and result.get_location(obj) == (-1,-1):
                     obj.advance(self, result)
 
-        for x in range(self.width):
-            for y in range(self.height-1, -1, -1):
-                obj = self.get_object(x, y)
-                if obj is not None and not self.is_destroyed(obj):
-                    obj.shoot(self, result)
+        if shoot:
+            for x in range(self.width):
+                for y in range(self.height-1, -1, -1):
+                    obj = self.get_object(x, y)
+                    if obj is not None and not self.is_destroyed(obj):
+                        obj.shoot(self, result)
 
         result.mouse_pos = self.mouse_pos
 
@@ -564,7 +565,7 @@ def run(world, x, y, w, h):
                         old_world, world = world, world.advance()
 
         if waiting_for_player:
-            temporary_new_world = world.advance()
+            temporary_new_world = world.advance(shoot=False)
             draw_world(world, temporary_new_world, 0.0, screen, x, y, w, h, True)
         else:
             draw_world(old_world, world, (frame % 20) / 20.0, screen, x, y, w, h)
