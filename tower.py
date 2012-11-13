@@ -265,10 +265,7 @@ class World(object):
 
     def make_random_wave(self):
         count = random.randint(3,12)
-        if random.randint(0,1) == 0:
-            enemy_type = MarchingBaddie
-        else:
-            enemy_type = FallingBaddie
+        enemy_type = MarchingBaddie
         enemy_initial_state = enemy_type().get_initial_state()
         spawnx = random.randint(0,self.width-1)
         return count, enemy_type, enemy_initial_state, spawnx
@@ -312,7 +309,7 @@ class World(object):
     def clicked(self, x, y):
         if not self.place_turret_cooldown and y != 0:
             self.add_object(x, y, self.next_turret)
-            self.place_turret_cooldown = 4
+            self.place_turret_cooldown = 3
 
     def hover(self, x, y):
         self.mouse_pos = (x, y)
