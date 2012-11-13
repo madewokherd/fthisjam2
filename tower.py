@@ -513,16 +513,17 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
     
 def run(world, x, y, w, h):
     screen = pygame.display.get_surface()
-    clock = pygame.time.Clock()
     paused = False
     frame = 0
     old_world, world = world, world.advance()
     pygame.time.set_timer(pygame.USEREVENT, 15)
-
+    timer_activated = True
+    waiting_for_player = False
+    
     while True:
         events = pygame.event.get()
         
-        if paused and not events:
+        if not events:
             events = [pygame.event.wait()]
         
         for event in events:
@@ -541,19 +542,24 @@ def run(world, x, y, w, h):
                 world.hover(press_x, press_y)
                 if event.button == 1:
                     world.clicked(press_x, press_y)
+                    waiting_for_player = False
             elif event.type == pygame.MOUSEMOTION:
                 press_x = event.pos[0] * world.width / w + x
                 press_y = event.pos[1] * world.height / h + y
                 world.hover(press_x, press_y)
             elif event.type == pygame.USEREVENT:
-                frame += 1
-                if frame % 20 == 0:
-                    if world.place_turret_cooldown:
+                if not world.place_turret_cooldown and frame % 20 == 19:
+                    waiting_for_player = True
+                else:
+                    frame += 1
+                    if frame % 20 == 0:
                         old_world, world = world, world.advance()
-                    else:
-                        frame -= 1
 
-        draw_world(old_world, world, (frame % 20) / 20.0, screen, x, y, w, h)
+        if waiting_for_player:
+            temporary_new_world = world.advance()
+            draw_world(world, temporary_new_world, 0.0, screen, x, y, w, h)
+        else:
+            draw_world(old_world, world, (frame % 20) / 20.0, screen, x, y, w, h)
 
         if paused:
             if pygame.font:
@@ -563,6 +569,13 @@ def run(world, x, y, w, h):
                 screen.blit(text, textpos)
 
         pygame.display.flip()
+
+        if timer_activated != bool(not paused and not waiting_for_player):
+            timer_activated = not timer_activated
+            if timer_activated:
+                pygame.time.set_timer(pygame.USEREVENT, 15)
+            else:
+                pygame.time.set_timer(pygame.USEREVENT, 0)
 
 def main():
     game_width = 6
