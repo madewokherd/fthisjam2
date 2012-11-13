@@ -333,7 +333,7 @@ class World(object):
         elif r == 5:
             return BishopTurret()
 
-def draw_world(old_world, world, t, surface, x, y, w, h):
+def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
 
     for obj_x in range(world.width):
@@ -434,9 +434,15 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                 
                     surface.fill(Color(0,0,0,255), Rect(draw_x, draw_y, draw_width, draw_height))
                     if isinstance(obj, Baddie):
-                        surface.fill(Color(255,0,0,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
+                        if paused:
+                            surface.fill(Color(48,0,0,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
+                        else:
+                            surface.fill(Color(255,0,0,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
                     elif isinstance(obj, Turret):
-                        surface.fill(Color(0,0,255,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
+                        if paused:
+                            surface.fill(Color(0,0,48,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
+                        else:
+                            surface.fill(Color(0,0,255,255), Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
                     else:
                         surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
@@ -452,26 +458,27 @@ def draw_world(old_world, world, t, surface, x, y, w, h):
                     draw_height = h / world.height
                     surface.fill(Color(48,48,48,255), Rect(draw_x, draw_y, draw_width, draw_height), BLEND_ADD)
 
-    for source, target in world.shot_animations:
-        prev_x, prev_y = old_world.get_location(source)
-        obj_x, obj_y = world.get_location(target)
-        
-        if prev_x in (obj_x, -1):
-            draw_x = obj_x * w / world.width
-        else:
-            draw_x = int(((1.0-t) * prev_x + t * obj_x) * w / world.width)
-        if prev_y in (obj_y, -1):
-            draw_y = obj_y * h / world.height
-        else:
-            draw_y = int(((1.0-t) * prev_y + t * obj_y) * h / world.height)
-        
-        draw_width = w / world.width
-        draw_height = h / world.height
-        bullet_width = w / world.width / 8
-        bullet_height = h / world.height / 8
-        draw_x += (draw_width - bullet_width) / 2
-        draw_y += (draw_height - bullet_height) / 2
-        surface.fill(Color(255,128,0,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
+    if not paused:
+        for source, target in world.shot_animations:
+            prev_x, prev_y = old_world.get_location(source)
+            obj_x, obj_y = world.get_location(target)
+            
+            if prev_x in (obj_x, -1):
+                draw_x = obj_x * w / world.width
+            else:
+                draw_x = int(((1.0-t) * prev_x + t * obj_x) * w / world.width)
+            if prev_y in (obj_y, -1):
+                draw_y = obj_y * h / world.height
+            else:
+                draw_y = int(((1.0-t) * prev_y + t * obj_y) * h / world.height)
+            
+            draw_width = w / world.width
+            draw_height = h / world.height
+            bullet_width = w / world.width / 8
+            bullet_height = h / world.height / 8
+            draw_x += (draw_width - bullet_width) / 2
+            draw_y += (draw_height - bullet_height) / 2
+            surface.fill(Color(255,128,0,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
 
     if not world.place_turret_cooldown:
         # draw turret to be placed
@@ -557,7 +564,7 @@ def run(world, x, y, w, h):
 
         if waiting_for_player:
             temporary_new_world = world.advance()
-            draw_world(world, temporary_new_world, 0.0, screen, x, y, w, h)
+            draw_world(world, temporary_new_world, 0.0, screen, x, y, w, h, True)
         else:
             draw_world(old_world, world, (frame % 20) / 20.0, screen, x, y, w, h)
 
