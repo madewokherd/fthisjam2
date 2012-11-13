@@ -312,7 +312,7 @@ class World(object):
     def clicked(self, x, y):
         if not self.place_turret_cooldown and y != 0:
             self.add_object(x, y, self.next_turret)
-            self.place_turret_cooldown = 3
+            self.place_turret_cooldown = 4
 
     def hover(self, x, y):
         self.mouse_pos = (x, y)
