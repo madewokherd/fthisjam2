@@ -570,7 +570,10 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
             bullet_height = h / world.height / 8
             draw_x += (draw_width - bullet_width) / 2
             draw_y += (draw_height - bullet_height) / 2
-            surface.fill(Color(255,128,0,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
+            if isinstance(source, Baddie):
+                surface.fill(Color(0,255,128,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
+            else:
+                surface.fill(Color(255,128,0,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
 
     if not world.place_turret_cooldown:
         # draw turret to be placed
