@@ -236,6 +236,12 @@ class World(object):
 
         self.score = 0
 
+        self.click_to_baddie = False
+
+        self.num_waves = 0
+
+        self.game_ui = True
+
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
 
@@ -279,7 +285,13 @@ class World(object):
 
         result.lost = self.lost
 
-        while len(self.waves) < 1:
+        result.click_to_baddie = self.click_to_baddie
+
+        result.num_waves = self.num_waves
+
+        result.game_ui = self.game_ui
+
+        while len(self.waves) < self.num_waves:
             self.waves.append(self.make_random_wave())
 
         for count, enemy_type, enemy_initial_state, spawnx in self.waves:
@@ -324,9 +336,13 @@ class World(object):
         return result
 
     def clicked(self, x, y):
-        if not self.place_turret_cooldown and y != 0:
-            self.add_object(x, y, self.next_turret)
-            self.place_turret_cooldown = 3
+        if self.click_to_baddie:
+            count, enemy_type, enemy_initial_state, spawnx = self.make_random_wave()
+            self.add_object(x, y, enemy_type(), enemy_initial_state)
+        else:
+            if not self.place_turret_cooldown and y != 0:
+                self.add_object(x, y, self.next_turret)
+                self.place_turret_cooldown = 3
 
     def hover(self, x, y):
         self.mouse_pos = (x, y)
@@ -575,7 +591,7 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
             else:
                 surface.fill(Color(255,128,0,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
 
-    if not world.place_turret_cooldown:
+    if not world.click_to_baddie and not world.place_turret_cooldown:
         # draw turret to be placed
 
         mouse_x, mouse_y = world.mouse_pos
@@ -612,16 +628,25 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
                                  2)
 
                 pygame.draw.rect(surface, Color(128,0,0,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
-    
-def run(world, x, y, w, h):
+
+def make_title_world(width, height):
+    world = World(width, height)
+    world.num_waves = 0 # don't spawn enemies
+    world.click_to_baddie = True
+    world.game_ui = False
+    return world
+
+def run(x, y, w, h, game_width, game_height):
     screen = pygame.display.get_surface()
     paused = False
     frame = 0
-    old_world, world = world, world.advance()
     pygame.time.set_timer(pygame.USEREVENT, 15)
     timer_activated = True
     waiting_for_player = False
-    
+
+    world = make_title_world(game_width, game_height)
+    old_world, world = world, world.advance()
+
     while True:
         events = pygame.event.get()
         
@@ -655,7 +680,7 @@ def run(world, x, y, w, h):
                 if 0 <= press_x < world.width and 0 <= press_y < world.height:
                     world.hover(press_x, press_y)
             elif event.type == pygame.USEREVENT:
-                if not world.place_turret_cooldown and not world.lost and frame % 20 == 19:
+                if not world.place_turret_cooldown and not world.click_to_baddie and not world.lost and frame % 20 == 19:
                     waiting_for_player = True
                 else:
                     frame += 1
@@ -668,17 +693,18 @@ def run(world, x, y, w, h):
         else:
             draw_world(old_world, world, (frame % 20) / 20.0, screen, x, y, w, h)
 
-        font = pygame.font.Font(None, 48)
-        text = font.render(str(old_world.score), 1, Color(240, 240, 240, 255))
-        screen.fill(Color(0,0,0,255), Rect(0, h, w, 48))
-        screen.blit(text, (0, h))
+        if world.game_ui:
+            font = pygame.font.Font(None, 48)
+            text = font.render(str(old_world.score), 1, Color(240, 240, 240, 255))
+            screen.fill(Color(0,0,0,255), Rect(0, h, w, 48))
+            screen.blit(text, (0, h))
 
-        if paused:
+        if paused and world.game_ui:
             if pygame.font:
                 text = font.render("Paused", 1, Color(240, 240, 240, 255))
                 textpos = text.get_rect(centerx=x+w//2, centery=y+h//2)
                 screen.blit(text, textpos)
-        elif old_world.lost:
+        elif old_world.lost and world.game_ui:
             if pygame.font:
                 text = font.render("Game Over", 1, Color(240, 240, 240, 255))
                 textpos = text.get_rect(centerx=x+w//2, centery=y+h//2)
@@ -704,11 +730,9 @@ def main():
 
     pygame.init()
 
-    world = World(game_width, game_height)
-
     pygame.display.set_mode((width, height + 48))
     
-    run(world, 0, 0, width, height)
+    run(0, 0, width, height, game_width, game_height)
 
 if __name__ == '__main__':
     main()
