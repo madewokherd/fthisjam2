@@ -234,6 +234,8 @@ class World(object):
 
         self.lost = False
 
+        self.score = 0
+
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
 
@@ -304,6 +306,11 @@ class World(object):
                 break
         else:
             result.lost = True
+
+        if result.lost:
+            result.score = self.score
+        else:
+            result.score = self.score + 1
 
         result.mouse_pos = self.mouse_pos
 
@@ -631,14 +638,19 @@ def run(world, x, y, w, h):
             elif event.type == MOUSEBUTTONDOWN:
                 press_x = event.pos[0] * world.width / w + x
                 press_y = event.pos[1] * world.height / h + y
-                world.hover(press_x, press_y)
-                if event.button == 1:
-                    world.clicked(press_x, press_y)
-                    waiting_for_player = False
+                if 0 <= press_x < world.width and 0 <= press_y < world.height:
+                    world.hover(press_x, press_y)
+                    if event.button == 1:
+                        world.clicked(press_x, press_y)
+                        waiting_for_player = False
+                    elif event.button == 3 and old_world.lost:
+                        world = World(old_world.width, old_world.height)
+                        old_world, world = world, world.advance()
             elif event.type == pygame.MOUSEMOTION:
                 press_x = event.pos[0] * world.width / w + x
                 press_y = event.pos[1] * world.height / h + y
-                world.hover(press_x, press_y)
+                if 0 <= press_x < world.width and 0 <= press_y < world.height:
+                    world.hover(press_x, press_y)
             elif event.type == pygame.USEREVENT:
                 if not world.place_turret_cooldown and not world.lost and frame % 20 == 19:
                     waiting_for_player = True
@@ -653,17 +665,23 @@ def run(world, x, y, w, h):
         else:
             draw_world(old_world, world, (frame % 20) / 20.0, screen, x, y, w, h)
 
+        font = pygame.font.Font(None, 48)
+        text = font.render(str(old_world.score), 1, Color(240, 240, 240, 255))
+        screen.fill(Color(0,0,0,255), Rect(0, h, w, 48))
+        screen.blit(text, (0, h))
+
         if paused:
             if pygame.font:
-                font = pygame.font.Font(None, 48)
                 text = font.render("Paused", 1, Color(240, 240, 240, 255))
                 textpos = text.get_rect(centerx=x+w//2, centery=y+h//2)
                 screen.blit(text, textpos)
         elif old_world.lost:
             if pygame.font:
-                font = pygame.font.Font(None, 48)
                 text = font.render("Game Over", 1, Color(240, 240, 240, 255))
                 textpos = text.get_rect(centerx=x+w//2, centery=y+h//2)
+                screen.blit(text, textpos)
+                text = font.render("Right-click to end", 1, Color(240, 240, 240, 255))
+                textpos = text.get_rect(centerx=x+w//2, y=textpos.y + textpos.height)
                 screen.blit(text, textpos)
 
         pygame.display.flip()
@@ -685,7 +703,7 @@ def main():
 
     world = World(game_width, game_height)
 
-    pygame.display.set_mode((width, height))
+    pygame.display.set_mode((width, height + 48))
     
     run(world, 0, 0, width, height)
 
