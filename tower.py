@@ -235,7 +235,7 @@ class World(object):
 
         self.destroyed_objects = {}
 
-        self.mouse_pos = (0, 0)
+        self.mouse_pos = (-1, -1)
 
         self.place_turret_cooldown = 3
 
@@ -652,7 +652,7 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
 
         mouse_x, mouse_y = world.mouse_pos
 
-        if mouse_y != 0:
+        if mouse_y != 0 and mouse_y != -1:
             draw_x = mouse_x * w / world.width + x
             draw_y = mouse_y * h / world.height + y
             
@@ -727,7 +727,7 @@ def make_title_world(width, height):
     link.size = 0.35
     link.action = ACTION_NEWWORLD
     link.action_args = make_easy_game
-    world.add_object(1, 4, link)
+    world.add_object(1, 3, link)
 
     link = Link()
     link.text = "Normal\nGame"
@@ -741,7 +741,7 @@ def make_title_world(width, height):
     link.size = 0.35
     link.action = ACTION_NEWWORLD
     link.action_args = make_hard_game
-    world.add_object(3, 4, link)
+    world.add_object(3, 3, link)
 
     link = Link()
     link.text = "Insane\nGame"
@@ -749,6 +749,16 @@ def make_title_world(width, height):
     link.action = ACTION_NEWWORLD
     link.action_args = make_insane_game
     world.add_object(4, 4, link)
+
+    x = 0
+    for char in "Chary":
+        link = Link()
+        link.text = char
+        link.size = 1.0
+        link.action = ACTION_NEWWORLD
+        link.action_args = make_title_world
+        world.add_object(x, 1, link)
+        x += 1
     
     return world
 
