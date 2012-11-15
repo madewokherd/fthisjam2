@@ -694,8 +694,10 @@ def make_hard_game(width, height):
 
 def make_insane_game(width, height):
     world = World(width, height)
+    world.turret_health_multiplier = 6
+    world.place_turret_cooldown = 8
     world.num_waves = 1
-    world.place_turret_cooldown = 4
+    world.next_turret = world.get_random_turret() #FIXME
     world.realtime = True
 
     return world
