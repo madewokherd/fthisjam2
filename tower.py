@@ -258,6 +258,8 @@ class World(object):
         self.num_waves = 0
 
         self.game_ui = True
+        
+        self.realtime = False
 
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
@@ -309,6 +311,8 @@ class World(object):
         result.game_ui = self.game_ui
 
         result.turret_health_multiplier = self.turret_health_multiplier
+
+        result.realtime = self.realtime
 
         while len(self.waves) < self.num_waves:
             self.waves.append(self.make_random_wave())
@@ -688,6 +692,14 @@ def make_hard_game(width, height):
 
     return world
 
+def make_insane_game(width, height):
+    world = World(width, height)
+    world.num_waves = 1
+    world.place_turret_cooldown = 4
+    world.realtime = True
+
+    return world
+
 def make_normal_game(width, height):
     world = World(width, height)
     world.num_waves = 1
@@ -728,6 +740,13 @@ def make_title_world(width, height):
     link.action = ACTION_NEWWORLD
     link.action_args = make_hard_game
     world.add_object(3, 4, link)
+
+    link = Link()
+    link.text = "Insane\nGame"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_insane_game
+    world.add_object(4, 4, link)
     
     return world
 
@@ -780,7 +799,7 @@ def run(x, y, w, h, game_width, game_height):
                 if 0 <= press_x < world.width and 0 <= press_y < world.height:
                     world.hover(press_x, press_y)
             elif event.type == pygame.USEREVENT:
-                if world.place_turret_cooldown <= world.place_turret_points and not world.click_to_baddie and not world.lost and frame % 20 == 19:
+                if world.place_turret_cooldown <= world.place_turret_points and not world.click_to_baddie and not world.lost and not world.realtime and frame % 20 == 19:
                     waiting_for_player = True
                 else:
                     frame += 1
