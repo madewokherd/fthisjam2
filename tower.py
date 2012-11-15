@@ -333,6 +333,7 @@ class World(object):
 
 def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
+    diagonal_pattern_surface = None
 
     for obj_x in range(world.width):
         for obj_y in range(world.height):
@@ -416,42 +417,47 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
 
                         surface.fill(Color(48,48,48,255), Rect(marking_x, marking_y, marking_width, marking_height), BLEND_ADD)
                     elif isinstance(obj, BishopTurret):
-                        marking_width = draw_width / 5
-                        marking_height = draw_height / 5
+                        if diagonal_pattern_surface is None:
+                            diagonal_pattern_surface = pygame.Surface((draw_width, draw_height), HWSURFACE)
 
-                        for dir_x in (-1,1):
-                            for dir_y in (-1,1):
-                                if dir_x == -1:
-                                    x_pos = (draw_x,
-                                             draw_x + marking_width,
-                                             draw_x + marking_width * 2,
-                                             draw_x + marking_width * 2,
-                                             draw_x + marking_width,
-                                             draw_x)
-                                else:
-                                    x_pos = (draw_x + draw_width - 1,
-                                             draw_x + draw_width - 1 - marking_width,
-                                             draw_x + draw_width - 1 - marking_width * 2,
-                                             draw_x + draw_width - 1 - marking_width * 2,
-                                             draw_x + draw_width - 1 - marking_width,
-                                             draw_x + draw_width - 1)
+                            marking_width = draw_width / 5
+                            marking_height = draw_height / 5
 
-                                if dir_y == -1:
-                                    y_pos = (draw_y,
-                                             draw_y,
-                                             draw_y + marking_height,
-                                             draw_y + marking_height * 2,
-                                             draw_y + marking_height * 2,
-                                             draw_y + marking_height)
-                                else:
-                                    y_pos = (draw_y + draw_height - 1,
-                                             draw_y + draw_height - 1,
-                                             draw_y + draw_height - 1 - marking_height,
-                                             draw_y + draw_height - 1 - marking_height * 2,
-                                             draw_y + draw_height - 1 - marking_height * 2,
-                                             draw_y + draw_height - 1 - marking_height)
+                            for dir_x in (-1,1):
+                                for dir_y in (-1,1):
+                                    if dir_x == -1:
+                                        x_pos = (0,
+                                                 marking_width,
+                                                 marking_width * 2,
+                                                 marking_width * 2,
+                                                 marking_width,
+                                                 0)
+                                    else:
+                                        x_pos = (draw_width - 1,
+                                                 draw_width - 1 - marking_width,
+                                                 draw_width - 1 - marking_width * 2,
+                                                 draw_width - 1 - marking_width * 2,
+                                                 draw_width - 1 - marking_width,
+                                                 draw_width - 1)
 
-                                pygame.draw.polygon(surface, Color(48,48,255,255), zip(x_pos, y_pos))
+                                    if dir_y == -1:
+                                        y_pos = (0,
+                                                 0,
+                                                 marking_height,
+                                                 marking_height * 2,
+                                                 marking_height * 2,
+                                                 marking_height)
+                                    else:
+                                        y_pos = (draw_height - 1,
+                                                 draw_height - 1,
+                                                 draw_height - 1 - marking_height,
+                                                 draw_height - 1 - marking_height * 2,
+                                                 draw_height - 1 - marking_height * 2,
+                                                 draw_height - 1 - marking_height)
+
+                                    pygame.draw.polygon(diagonal_pattern_surface, Color(48,48,48,255), zip(x_pos, y_pos))
+
+                        surface.blit(diagonal_pattern_surface, (draw_x, draw_y), special_flags=BLEND_ADD)
                     elif isinstance(obj, KnightTurret):
                         pygame.draw.circle(surface, Color(48,48,255,255),
                                            (draw_x + draw_width/2, draw_y + draw_height/2),
