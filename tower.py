@@ -396,6 +396,26 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
 
                     cooldown, health = world.get_state(obj, (0, obj.starting_health))
 
+                    if isinstance(obj, DirectionalTurret):
+                        marking_width = draw_width * 2 / 5
+                        marking_height = draw_height * 2 / 5
+
+                        if obj.direction[0] == -1:
+                            marking_x = draw_x
+                        elif obj.direction[0] == 0:
+                            marking_x = draw_x + (draw_width - marking_width) / 2
+                        else:
+                            marking_x = draw_x + draw_width - marking_width
+
+                        if obj.direction[1] == -1:
+                            marking_y = draw_y
+                        elif obj.direction[1] == 0:
+                            marking_y = draw_y + (draw_height - marking_height) / 2
+                        else:
+                            marking_y = draw_y + draw_height - marking_height
+
+                        surface.fill(Color(48,48,48,255), Rect(marking_x, marking_y, marking_width, marking_height), BLEND_ADD)
+
                     #draw stats
                     font = pygame.font.Font(None, draw_height / 3)
 
@@ -409,7 +429,10 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
                     # health
                     text = font.render("%s/%s" % (health, obj.starting_health)
                         , 1, Color(240, 240, 240, 255))
-                    textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height*2/3)
+                    if isinstance(obj, DirectionalTurret) and obj.direction == (0, 1):
+                        textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height/3)
+                    else:
+                        textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height*2/3)
                     surface.blit(text, textpos)
                 else:
                     surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
