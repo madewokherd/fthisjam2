@@ -262,6 +262,10 @@ class World(object):
         
         self.realtime = False
 
+        self.help_text = ""
+
+        self.help_text_on_top = False
+
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
 
@@ -314,6 +318,10 @@ class World(object):
         result.turret_health_multiplier = self.turret_health_multiplier
 
         result.realtime = self.realtime
+
+        result.help_text = self.help_text
+
+        result.help_text_on_top = self.help_text_on_top
 
         while len(self.waves) < self.num_waves:
             self.waves.append(self.make_random_wave())
@@ -398,9 +406,28 @@ class World(object):
             result.starting_health = self.turret_health_multiplier
             return result
 
+def draw_text(surface, text, x, y, size):
+    font = pygame.font.Font(None, size)
+
+    texts = []
+
+    for line in text.split('\n'):
+        text = font.render(line, 1, Color(240,240,240,255))
+        texts.append(text)
+
+    text_y = y
+
+    for line in texts:
+        textpos = line.get_rect(x=0, y=text_y)
+        surface.blit(line, textpos)
+        text_y += textpos.height
+
 def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
     diagonal_pattern_surface = None
+
+    if world.help_text and not world.help_text_on_top:
+        draw_text(surface, world.help_text, 0, 0, int(h / world.height / 2))
 
     for obj_x in range(world.width):
         for obj_y in range(world.height):
@@ -653,7 +680,7 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
 
         mouse_x, mouse_y = world.mouse_pos
 
-        if mouse_y != 0 and mouse_y != -1:
+        if mouse_y != 0 and mouse_y != -1 and not isinstance(world.get_object(mouse_x, mouse_y), Link):
             draw_x = mouse_x * w / world.width + x
             draw_y = mouse_y * h / world.height + y
             
@@ -686,6 +713,9 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
 
                 pygame.draw.rect(surface, Color(128,0,0,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
 
+    if world.help_text and world.help_text_on_top:
+        draw_text(surface, world.help_text, 0, 0, int(h / world.height / 2))
+
 def make_hard_game(width, height):
     world = World(width, height)
     world.num_waves = 1
@@ -714,6 +744,326 @@ def make_easy_game(width, height):
     world.turret_health_multiplier = 5
     world.num_waves = 1
     world.next_turret = world.get_random_turret() #FIXME
+
+    return world
+
+def make_help_world1(width, height):
+    world = World(width, height)
+    world.place_turret_cooldown = 1
+    world.game_ui = False
+
+    world.help_text = """
+Click to place a turret.
+
+The red x's show where the new
+turret will be able to fire.
+
+Every few turns, a new turret
+can be placed.
+
+The types of new turrets are
+chosen randomly.
+
+Squares covered by turrets
+are brightened."""
+
+    link = Link()
+    link.text = "Title"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_title_world
+    world.add_object(0, 7, link)
+
+    link = Link()
+    link.text = "" # Prev
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world1
+    world.add_object(1, 7, link)
+
+    link = Link()
+    link.text = "Page\n1 of 5"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world1
+    world.add_object(2, 7, link)
+
+    link = Link()
+    link.text = "Next"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world2
+    world.add_object(3, 7, link)
+
+    link = Link()
+    link.text = ""
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world1
+    world.add_object(4, 7, link)
+
+    link = Link()
+    link.text = "Reset"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world1
+    world.add_object(5, 7, link)
+
+    return world
+
+def make_help_world2(width, height):
+    world = World(width, height)
+    world.click_to_baddie = True
+    world.game_ui = False
+
+    world.help_text = """
+Click to place an enemy.
+
+Pay attention to how they move.
+
+Enemies will always move in the
+direction they face when possible.
+
+Otherwise, they will turn around,
+and attempt to move down.
+
+Failing that, they will try to move
+to the new direction they face.
+
+Predicting where enemies will go
+is very important."""
+
+    link = Link()
+    link.text = "Title"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_title_world
+    world.add_object(0, 7, link)
+
+    link = Link()
+    link.text = "Prev"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world1
+    world.add_object(1, 7, link)
+
+    link = Link()
+    link.text = "Page\n2 of 5"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world2
+    world.add_object(2, 7, link)
+
+    link = Link()
+    link.text = "Next"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world3
+    world.add_object(3, 7, link)
+
+    link = Link()
+    link.text = ""
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world2
+    world.add_object(4, 7, link)
+
+    link = Link()
+    link.text = "Reset"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world2
+    world.add_object(5, 7, link)
+
+    return world
+
+def make_help_world3(width, height):
+    world = World(width, height)
+    world.click_to_baddie = True
+    world.game_ui = False
+    world.num_waves = 1
+    world.help_text_on_top = True
+
+    world.help_text = """
+Enemies appear constantly at the
+top of the screen.
+
+When the bottom row is filled
+with enemies, the game is lost.
+
+The goal is to survive as long
+as possible."""
+
+    link = Link()
+    link.text = "Title"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_title_world
+    world.add_object(0, 7, link)
+
+    link = Link()
+    link.text = "Prev"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world2
+    world.add_object(1, 7, link)
+
+    link = Link()
+    link.text = "Page\n3 of 5"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world3
+    world.add_object(2, 7, link)
+
+    link = Link()
+    link.text = "Next"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world4
+    world.add_object(3, 7, link)
+
+    link = Link()
+    link.text = ""
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world3
+    world.add_object(4, 7, link)
+
+    link = Link()
+    link.text = "Reset"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world3
+    world.add_object(5, 7, link)
+
+    return world
+
+def make_help_world4(width, height):
+    world = World(width, height)
+    world.place_turret_cooldown = 10000
+    world.place_turret_points = 10000
+    world.game_ui = False
+    world.next_turret = DirectionalTurret()
+
+    world.help_text = """
+Enemies move, but turrets do not.
+
+It takes a single turn to fire.
+
+That means that a turret can hit
+an enemy only if the enemy WILL
+BE in the turret's range next turn.
+
+Enemies will attack your turrets
+when they are directly adjacent."""
+
+    link = Link()
+    link.text = "Title"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_title_world
+    world.add_object(0, 7, link)
+
+    link = Link()
+    link.text = "Prev"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world3
+    world.add_object(1, 7, link)
+
+    link = Link()
+    link.text = "Page\n4 of 5"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world4
+    world.add_object(2, 7, link)
+
+    link = Link()
+    link.text = "Next"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world5
+    world.add_object(3, 7, link)
+
+    link = Link()
+    link.text = ""
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world4
+    world.add_object(4, 7, link)
+
+    link = Link()
+    link.text = "Reset"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world4
+    world.add_object(5, 7, link)
+
+    world.add_object(3, 5, MarchingBaddie(), -1)
+    world.add_object(4, 4, MarchingBaddie(), -1)
+
+    return world
+
+def make_help_world5(width, height):
+    world = World(width, height)
+    world.place_turret_cooldown = 0
+    world.place_turret_points = 0
+    world.realtime = True
+    world.game_ui = False
+    world.num_waves = 1
+    world.help_text_on_top = True
+
+    world.help_text = """
+Firing at an enemy will deplete
+1 health from the turret.
+
+If a turret is attacked, it will
+lose 4 health.
+
+Placing a turret directly on
+another object will kill it."""
+
+    link = Link()
+    link.text = "Title"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_title_world
+    world.add_object(0, 7, link)
+
+    link = Link()
+    link.text = "Prev"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world4
+    world.add_object(1, 7, link)
+
+    link = Link()
+    link.text = "Page\n5 of 5"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world5
+    world.add_object(2, 7, link)
+
+    link = Link()
+    link.text = "" # Next
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world5
+    world.add_object(3, 7, link)
+
+    link = Link()
+    link.text = ""
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world5
+    world.add_object(4, 7, link)
+
+    link = Link()
+    link.text = "Reset"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world5
+    world.add_object(5, 7, link)
 
     return world
 
@@ -762,6 +1112,13 @@ def make_title_world(width, height):
         x += 1
 
     link = Link()
+    link.text = "Help"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_help_world1
+    world.add_object(1, 6, link)
+
+    link = Link()
     link.text = "Quit"
     link.size = 0.35
     link.action = ACTION_QUIT
@@ -808,6 +1165,7 @@ def run(x, y, w, h, game_width, game_height):
                                 if res.action == ACTION_NEWWORLD:
                                     world = res.action_args(game_width, game_height)
                                     old_world, world = world, world.advance()
+                                    waiting_for_player = False
                                 elif res.action == ACTION_QUIT:
                                     return
                             elif res:
