@@ -237,7 +237,9 @@ class World(object):
 
         self.mouse_pos = (0, 0)
 
-        self.place_turret_cooldown = 0
+        self.place_turret_cooldown = 3
+
+        self.place_turret_points = 0
 
         self.shot_animations = []
 
@@ -340,11 +342,9 @@ class World(object):
         result.mouse_pos = self.mouse_pos
 
         result.place_turret_cooldown = self.place_turret_cooldown
+        result.place_turret_points = self.place_turret_points + 1
+        
         result.next_turret = self.next_turret
-        if result.place_turret_cooldown != 0:
-            result.place_turret_cooldown -= 1
-            if result.place_turret_cooldown == 0:
-                result.next_turret = result.get_random_turret()
 
         return result
 
@@ -357,9 +357,10 @@ class World(object):
             self.add_object(x, y, enemy_type(), enemy_initial_state)
             return True
         else:
-            if not self.place_turret_cooldown and y != 0:
+            if self.place_turret_cooldown <= self.place_turret_points and y != 0:
                 self.add_object(x, y, self.next_turret)
-                self.place_turret_cooldown = 3
+                self.place_turret_points -= self.place_turret_cooldown
+                self.next_turret = self.get_random_turret()
                 return True
 
     def hover(self, x, y):
@@ -632,7 +633,7 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
             else:
                 surface.fill(Color(255,128,0,255), Rect(draw_x, draw_y, bullet_width, bullet_height))
 
-    if not world.click_to_baddie and not world.place_turret_cooldown:
+    if not world.click_to_baddie and world.place_turret_cooldown <= world.place_turret_points:
         # draw turret to be placed
 
         mouse_x, mouse_y = world.mouse_pos
@@ -670,6 +671,13 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
 
                 pygame.draw.rect(surface, Color(128,0,0,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
 
+def make_hard_game(width, height):
+    world = World(width, height)
+    world.num_waves = 1
+    world.place_turret_cooldown = 4
+
+    return world
+
 def make_normal_game(width, height):
     world = World(width, height)
     world.num_waves = 1
@@ -688,6 +696,13 @@ def make_title_world(width, height):
     link.action = ACTION_NEWWORLD
     link.action_args = make_normal_game
     world.add_object(2, 4, link)
+
+    link = Link()
+    link.text = "Hard\nGame"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_hard_game
+    world.add_object(3, 4, link)
     
     return world
 
@@ -740,7 +755,7 @@ def run(x, y, w, h, game_width, game_height):
                 if 0 <= press_x < world.width and 0 <= press_y < world.height:
                     world.hover(press_x, press_y)
             elif event.type == pygame.USEREVENT:
-                if not world.place_turret_cooldown and not world.click_to_baddie and not world.lost and frame % 20 == 19:
+                if world.place_turret_cooldown <= world.place_turret_points and not world.click_to_baddie and not world.lost and frame % 20 == 19:
                     waiting_for_player = True
                 else:
                     frame += 1
