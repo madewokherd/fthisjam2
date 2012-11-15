@@ -775,24 +775,32 @@ def run(x, y, w, h, game_width, game_height):
                     return
                 elif event.key == K_PAUSE or event.key == K_p:
                     paused = not paused
-            elif paused:
-                continue
             elif event.type == MOUSEBUTTONDOWN:
                 press_x = event.pos[0] * world.width / w + x
                 press_y = event.pos[1] * world.height / h + y
                 if 0 <= press_x < world.width and 0 <= press_y < world.height:
                     world.hover(press_x, press_y)
                     if event.button == 1:
-                        res = world.clicked(press_x, press_y)
-                        if isinstance(res, Link):
-                            if res.action == ACTION_NEWWORLD:
-                                world = res.action_args(game_width, game_height)
+                        if paused:
+                            paused = not paused
+                        else:
+                            res = world.clicked(press_x, press_y)
+                            if isinstance(res, Link):
+                                if res.action == ACTION_NEWWORLD:
+                                    world = res.action_args(game_width, game_height)
+                                    old_world, world = world, world.advance()
+                            elif res:
+                                waiting_for_player = False
+                    elif event.button == 3:
+                        if old_world.game_ui:
+                            if old_world.lost or paused:
+                                world = make_title_world(game_width, game_height)
                                 old_world, world = world, world.advance()
-                        elif res:
-                            waiting_for_player = False
-                    elif event.button == 3 and old_world.game_ui and old_world.lost:
-                        world = make_title_world(game_width, game_height)
-                        old_world, world = world, world.advance()
+                                paused = False
+                            else:
+                                paused = not paused
+            elif paused:
+                continue
             elif event.type == pygame.MOUSEMOTION:
                 press_x = event.pos[0] * world.width / w + x
                 press_y = event.pos[1] * world.height / h + y
@@ -819,16 +827,16 @@ def run(x, y, w, h, game_width, game_height):
             text = font.render(str(old_world.score), 1, Color(240, 240, 240, 255))
             screen.blit(text, (0, h))
 
-        if paused and world.game_ui:
-            if pygame.font:
+        if world.game_ui and pygame.font:
+            if paused:
                 text = font.render("Paused", 1, Color(240, 240, 240, 255))
                 textpos = text.get_rect(centerx=x+w//2, centery=y+h//2)
                 screen.blit(text, textpos)
-        elif old_world.lost and world.game_ui:
-            if pygame.font:
+            elif old_world.lost:
                 text = font.render("Game Over", 1, Color(240, 240, 240, 255))
                 textpos = text.get_rect(centerx=x+w//2, centery=y+h//2)
                 screen.blit(text, textpos)
+            if paused or old_world.lost:
                 text = font.render("Right-click to end", 1, Color(240, 240, 240, 255))
                 textpos = text.get_rect(centerx=x+w//2, y=textpos.y + textpos.height)
                 screen.blit(text, textpos)
