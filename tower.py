@@ -232,6 +232,8 @@ class World(object):
 
         self.waves = []
 
+        self.lost = False
+
     def add_object(self, x, y, obj, state=None):
         self.objects[x + y * self.width] = obj
 
@@ -273,6 +275,8 @@ class World(object):
     def advance(self, shoot=True):
         result = World(self.width, self.height)
 
+        result.lost = self.lost
+
         while len(self.waves) < 1:
             self.waves.append(self.make_random_wave())
 
@@ -294,6 +298,12 @@ class World(object):
                     obj = self.get_object(x, y)
                     if obj is not None and not self.is_destroyed(obj):
                         obj.shoot(self, result)
+
+        for x in range(self.width):
+            if not isinstance(result.get_object(x, self.height-1), Baddie):
+                break
+        else:
+            result.lost = True
 
         result.mouse_pos = self.mouse_pos
 
@@ -630,7 +640,7 @@ def run(world, x, y, w, h):
                 press_y = event.pos[1] * world.height / h + y
                 world.hover(press_x, press_y)
             elif event.type == pygame.USEREVENT:
-                if not world.place_turret_cooldown and frame % 20 == 19:
+                if not world.place_turret_cooldown and not world.lost and frame % 20 == 19:
                     waiting_for_player = True
                 else:
                     frame += 1
@@ -647,6 +657,12 @@ def run(world, x, y, w, h):
             if pygame.font:
                 font = pygame.font.Font(None, 48)
                 text = font.render("Paused", 1, Color(240, 240, 240, 255))
+                textpos = text.get_rect(centerx=x+w//2, centery=y+h//2)
+                screen.blit(text, textpos)
+        elif old_world.lost:
+            if pygame.font:
+                font = pygame.font.Font(None, 48)
+                text = font.render("Game Over", 1, Color(240, 240, 240, 255))
                 textpos = text.get_rect(centerx=x+w//2, centery=y+h//2)
                 screen.blit(text, textpos)
 
