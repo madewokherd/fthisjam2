@@ -205,6 +205,7 @@ class BishopTurret(Turret):
                 yield cx, cy
 
 ACTION_NEWWORLD = "ACTION_NEWWORLD"
+ACTION_QUIT = "ACTION_QUIT"
 
 class Link(GameObject):
     text = "text"
@@ -759,7 +760,13 @@ def make_title_world(width, height):
         link.action_args = make_title_world
         world.add_object(x, 1, link)
         x += 1
-    
+
+    link = Link()
+    link.text = "Quit"
+    link.size = 0.35
+    link.action = ACTION_QUIT
+    world.add_object(3, 6, link)
+
     return world
 
 def run(x, y, w, h, game_width, game_height):
@@ -801,6 +808,8 @@ def run(x, y, w, h, game_width, game_height):
                                 if res.action == ACTION_NEWWORLD:
                                     world = res.action_args(game_width, game_height)
                                     old_world, world = world, world.advance()
+                                elif res.action == ACTION_QUIT:
+                                    return
                             elif res:
                                 waiting_for_player = False
                     elif event.button == 3:
