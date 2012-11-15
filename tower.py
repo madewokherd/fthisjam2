@@ -415,6 +415,51 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
                             marking_y = draw_y + draw_height - marking_height
 
                         surface.fill(Color(48,48,48,255), Rect(marking_x, marking_y, marking_width, marking_height), BLEND_ADD)
+                    elif isinstance(obj, BishopTurret):
+                        marking_width = draw_width / 5
+                        marking_height = draw_height / 5
+
+                        for dir_x in (-1,1):
+                            for dir_y in (-1,1):
+                                if dir_x == -1:
+                                    x_pos = (draw_x,
+                                             draw_x + marking_width,
+                                             draw_x + marking_width * 2,
+                                             draw_x + marking_width * 2,
+                                             draw_x + marking_width,
+                                             draw_x)
+                                else:
+                                    x_pos = (draw_x + draw_width - 1,
+                                             draw_x + draw_width - 1 - marking_width,
+                                             draw_x + draw_width - 1 - marking_width * 2,
+                                             draw_x + draw_width - 1 - marking_width * 2,
+                                             draw_x + draw_width - 1 - marking_width,
+                                             draw_x + draw_width - 1)
+
+                                if dir_y == -1:
+                                    y_pos = (draw_y,
+                                             draw_y,
+                                             draw_y + marking_height,
+                                             draw_y + marking_height * 2,
+                                             draw_y + marking_height * 2,
+                                             draw_y + marking_height)
+                                else:
+                                    y_pos = (draw_y + draw_height - 1,
+                                             draw_y + draw_height - 1,
+                                             draw_y + draw_height - 1 - marking_height,
+                                             draw_y + draw_height - 1 - marking_height * 2,
+                                             draw_y + draw_height - 1 - marking_height * 2,
+                                             draw_y + draw_height - 1 - marking_height)
+
+                                pygame.draw.polygon(surface, Color(48,48,255,255), zip(x_pos, y_pos))
+                    elif isinstance(obj, KnightTurret):
+                        pygame.draw.circle(surface, Color(48,48,255,255),
+                                           (draw_x + draw_width/2, draw_y + draw_height/2),
+                                           (draw_width / 2) - 2)
+
+                        pygame.draw.circle(surface, Color(0,0,255,255),
+                                           (draw_x + draw_width/2, draw_y + draw_height/2),
+                                           draw_width / 4)
 
                     #draw stats
                     font = pygame.font.Font(None, draw_height / 3)
@@ -431,8 +476,10 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
                         , 1, Color(240, 240, 240, 255))
                     if isinstance(obj, DirectionalTurret) and obj.direction == (0, 1):
                         textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height/3)
-                    else:
+                    elif isinstance(obj, DirectionalTurret) and obj.direction == (0, -1):
                         textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height*2/3)
+                    else:
+                        textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height/2)
                     surface.blit(text, textpos)
                 else:
                     surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
