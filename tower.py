@@ -204,6 +204,19 @@ class BishopTurret(Turret):
                     break
                 yield cx, cy
 
+ACTION_NEWWORLD = "ACTION_NEWWORLD"
+
+class Link(GameObject):
+    text = "text"
+    size = 1.0
+    action = None
+    action_args = ()
+
+    def advance(self, old_world, new_world):
+        old_x, old_y = old_world.get_location(self)
+
+        new_world.add_object(old_x, old_y, self, None)
+
 class OutOfBounds(object):
     pass
 
@@ -336,13 +349,18 @@ class World(object):
         return result
 
     def clicked(self, x, y):
+        obj = self.get_object(x, y)
+        if isinstance(obj, Link):
+            return obj
         if self.click_to_baddie:
             count, enemy_type, enemy_initial_state, spawnx = self.make_random_wave()
             self.add_object(x, y, enemy_type(), enemy_initial_state)
+            return True
         else:
             if not self.place_turret_cooldown and y != 0:
                 self.add_object(x, y, self.next_turret)
                 self.place_turret_cooldown = 3
+                return True
 
     def hover(self, x, y):
         self.mouse_pos = (x, y)
@@ -520,6 +538,29 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
                     else:
                         textpos = text.get_rect(centerx=draw_x+draw_width/2, centery=draw_y+draw_height/2)
                     surface.blit(text, textpos)
+                elif isinstance(obj, Link):
+                    if world.mouse_pos == (obj_x, obj_y):
+                        link_color = Color(0,255,0,255)
+                    else:
+                        link_color = Color(0,128,0,255)
+                    surface.fill(link_color, Rect(draw_x+2, draw_y+2, draw_width-4, draw_height-4))
+
+                    font = pygame.font.Font(None, int(draw_height * obj.size))
+
+                    texts = []
+
+                    for line in obj.text.split('\n'):
+                        text = font.render(line, 1, Color(0, 0, 0, 255), link_color)
+                        texts.append(text)
+
+                    vert_height = sum(line.get_height() for line in texts)
+
+                    text_y = draw_y + (draw_height - vert_height) / 2
+
+                    for line in texts:
+                        textpos = line.get_rect(centerx=draw_x+draw_width/2, y=text_y)
+                        surface.blit(line, textpos)
+                        text_y += textpos.height
                 else:
                     surface.fill(Color(255,0,255,255), Rect(draw_x, draw_y, draw_width, draw_height))
 
@@ -629,11 +670,24 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
 
                 pygame.draw.rect(surface, Color(128,0,0,168), Rect(draw_x, draw_y, obj_width, obj_height), 2)
 
+def make_normal_game(width, height):
+    world = World(width, height)
+
+    return world
+
 def make_title_world(width, height):
     world = World(width, height)
     world.num_waves = 0 # don't spawn enemies
     world.click_to_baddie = True
     world.game_ui = False
+
+    link = Link()
+    link.text = "Normal\nGame"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_normal_game
+    world.add_object(2, 4, link)
+    
     return world
 
 def run(x, y, w, h, game_width, game_height):
@@ -669,10 +723,15 @@ def run(x, y, w, h, game_width, game_height):
                 if 0 <= press_x < world.width and 0 <= press_y < world.height:
                     world.hover(press_x, press_y)
                     if event.button == 1:
-                        world.clicked(press_x, press_y)
-                        waiting_for_player = False
-                    elif event.button == 3 and old_world.lost:
-                        world = World(old_world.width, old_world.height)
+                        res = world.clicked(press_x, press_y)
+                        if isinstance(res, Link):
+                            if res.action == ACTION_NEWWORLD:
+                                world = res.action_args(game_width, game_height)
+                                old_world, world = world, world.advance()
+                            elif res:
+                                waiting_for_player = False
+                    elif event.button == 3 and old_world.game_ui and old_world.lost:
+                        world = make_title_world(game_width, game_height)
                         old_world, world = world, world.advance()
             elif event.type == pygame.MOUSEMOTION:
                 press_x = event.pos[0] * world.width / w + x
