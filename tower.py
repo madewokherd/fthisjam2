@@ -243,6 +243,8 @@ class World(object):
 
         self.shot_animations = []
 
+        self.turret_health_multiplier = 4
+
         self.next_turret = self.get_random_turret()
 
         self.waves = []
@@ -305,6 +307,8 @@ class World(object):
         result.num_waves = self.num_waves
 
         result.game_ui = self.game_ui
+
+        result.turret_health_multiplier = self.turret_health_multiplier
 
         while len(self.waves) < self.num_waves:
             self.waves.append(self.make_random_wave())
@@ -375,13 +379,19 @@ class World(object):
             result = DirectionalTurret()
             result.direction = ((-1,0),(1,0),(0,-1),(0,1))[r]
             if r == 3:
-                result.starting_health = 36
+                result.starting_health = 9 * self.turret_health_multiplier
                 result.cooldown = 1
+            else:
+                result.starting_health = self.turret_health_multiplier
             return result
         elif r == 4:
-            return KnightTurret()
+            result = KnightTurret()
+            result.starting_health = self.turret_health_multiplier
+            return result
         elif r == 5:
-            return BishopTurret()
+            result = BishopTurret()
+            result.starting_health = self.turret_health_multiplier
+            return result
 
 def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
     surface.fill(Color(0,0,0,255), Rect(x, y, w, h))
@@ -684,11 +694,26 @@ def make_normal_game(width, height):
 
     return world
 
+def make_easy_game(width, height):
+    world = World(width, height)
+    world.turret_health_multiplier = 5
+    world.num_waves = 1
+    world.next_turret = world.get_random_turret() #FIXME
+
+    return world
+
 def make_title_world(width, height):
     world = World(width, height)
     world.num_waves = 0 # don't spawn enemies
     world.click_to_baddie = True
     world.game_ui = False
+
+    link = Link()
+    link.text = "Easy\nGame"
+    link.size = 0.35
+    link.action = ACTION_NEWWORLD
+    link.action_args = make_easy_game
+    world.add_object(1, 4, link)
 
     link = Link()
     link.text = "Normal\nGame"
