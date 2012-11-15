@@ -672,6 +672,7 @@ def draw_world(old_world, world, t, surface, x, y, w, h, paused=False):
 
 def make_normal_game(width, height):
     world = World(width, height)
+    world.num_waves = 1
 
     return world
 
@@ -728,8 +729,8 @@ def run(x, y, w, h, game_width, game_height):
                             if res.action == ACTION_NEWWORLD:
                                 world = res.action_args(game_width, game_height)
                                 old_world, world = world, world.advance()
-                            elif res:
-                                waiting_for_player = False
+                        elif res:
+                            waiting_for_player = False
                     elif event.button == 3 and old_world.game_ui and old_world.lost:
                         world = make_title_world(game_width, game_height)
                         old_world, world = world, world.advance()
