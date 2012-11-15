@@ -693,10 +693,11 @@ def run(x, y, w, h, game_width, game_height):
         else:
             draw_world(old_world, world, (frame % 20) / 20.0, screen, x, y, w, h)
 
+        screen.fill(Color(0,0,32,255), Rect(0, h, w, 48))
+
         if world.game_ui:
             font = pygame.font.Font(None, 48)
             text = font.render(str(old_world.score), 1, Color(240, 240, 240, 255))
-            screen.fill(Color(0,0,0,255), Rect(0, h, w, 48))
             screen.blit(text, (0, h))
 
         if paused and world.game_ui:
